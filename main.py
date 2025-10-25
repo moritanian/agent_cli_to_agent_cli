@@ -74,12 +74,12 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Run a two-agent Gemini CLI conversation."
+        description="Run the two-agent CLI conversation sample."
     )
     parser.add_argument(
         "--debug",
         action="store_true",
-        help="Enable Gemini CLI debug output.",
+        help="Enable CLI debug output.",
     )
     args = parser.parse_args()
     asyncio.run(main(debug=args.debug))
