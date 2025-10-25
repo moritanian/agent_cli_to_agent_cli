@@ -296,6 +296,8 @@ class CodexCliChatCompletionClient(CLIChatCompletionClient):
                 payload = json.loads(line)
             except json.JSONDecodeError:
                 continue
+            if not isinstance(payload, dict):
+                continue
             item = payload.get("item")
             if isinstance(item, dict) and item.get("type") == "agent_message":
                 msg_text = item.get("text")
