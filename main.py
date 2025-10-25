@@ -7,7 +7,7 @@ import asyncio
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.messages import TextMessage
 
-from cli_clients import GeminiCliChatCompletionClient
+from cli_clients import CodexCliChatCompletionClient
 
 
 async def _run_agent(agent: AssistantAgent, task) -> str:
@@ -27,7 +27,7 @@ async def main() -> None:
         return AssistantAgent(
             name=name,
             system_message=system_message,
-            model_client=GeminiCliChatCompletionClient(debug=True),
+            model_client=CodexCliChatCompletionClient(debug=True),
         )
 
     planner = make_agent(
@@ -48,7 +48,7 @@ async def main() -> None:
     try:
         planner_text = await _run_agent(
             planner,
-            "Propose a concise three-step plan for integrating Gemini CLI into an AutoGen workflow.",
+            "Propose a concise three-step plan for integrating the Codex CLI into an AutoGen workflow.",
         )
     except Exception as exc:
         print(f"[Planner error] {exc}")
@@ -77,4 +77,3 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
-

@@ -244,31 +244,34 @@ class GeminiCliChatCompletionClient(CLIChatCompletionClient):
 
 
 class CodexCliChatCompletionClient(CLIChatCompletionClient):
-    """Codex CLI-backed chat completion client (text-only)."""
+    """Codex CLI-backed chat completion client (text or JSONL output)."""
 
     def __init__(
         self,
         *,
         cli_path: str = "codex",
         model: str | None = None,
-        prompt_flag: str | None = "--prompt",
+        prompt_flag: str | None = None,
+        subcommand: Sequence[str] | None = ("exec", "--json"),
         output_flags: Sequence[str] | None = None,
         extra_flags: Sequence[str] | None = None,
         debug: bool = False,
     ) -> None:
         output_flags = list(output_flags or [])
         extra_flags = list(extra_flags or [])
+        subcommand = list(subcommand or [])
 
         def make_argv(prompt: str) -> Sequence[str]:
             argv: list[str] = [cli_path]
+            argv.extend(subcommand)
             if model:
                 argv.extend(["-m", model])
+            argv.extend(output_flags)
+            argv.extend(extra_flags)
             if prompt_flag:
                 argv.extend([prompt_flag, prompt])
             else:
                 argv.append(prompt)
-            argv.extend(output_flags)
-            argv.extend(extra_flags)
             return argv
 
         super().__init__(
@@ -281,11 +284,26 @@ class CodexCliChatCompletionClient(CLIChatCompletionClient):
     @staticmethod
     def _parse_response(stdout: str, stderr: str) -> str:
         text = stdout.strip()
-        if text:
-            return text
-        if stderr.strip():
-            raise RuntimeError(stderr.strip())
-        return ""
+        if not text:
+            if stderr.strip():
+                raise RuntimeError(stderr.strip())
+            return ""
+
+        lines = [line for line in text.splitlines() if line.strip()]
+        agent_messages: list[str] = []
+        for line in lines:
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            item = payload.get("item")
+            if isinstance(item, dict) and item.get("type") == "agent_message":
+                msg_text = item.get("text")
+                if isinstance(msg_text, str):
+                    agent_messages.append(msg_text)
+        if agent_messages:
+            return "\n".join(agent_messages).strip()
+        return text
 
 
 def _parse_json(raw_output: str) -> dict[str, Any]:
@@ -346,4 +364,3 @@ def _walk_text(node: Any) -> Sequence[str]:
 
     _recurse(node)
     return chunks
-
