@@ -7,7 +7,7 @@ import asyncio
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.messages import TextMessage
 
-from cli_clients import CodexCliChatCompletionClient
+from cli_clients import GeminiCliChatCompletionClient
 
 
 async def _run_agent(agent: AssistantAgent, task) -> str:
@@ -27,7 +27,7 @@ async def main(*, debug: bool = False) -> None:
         return AssistantAgent(
             name=name,
             system_message=system_message,
-            model_client=CodexCliChatCompletionClient(debug=debug),
+            model_client=GeminiCliChatCompletionClient(debug=debug),
         )
 
     agent_alpha = make_agent(
@@ -73,11 +73,13 @@ async def main(*, debug: bool = False) -> None:
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Run a two-agent Codex CLI conversation.")
+    parser = argparse.ArgumentParser(
+        description="Run a two-agent Gemini CLI conversation."
+    )
     parser.add_argument(
         "--debug",
         action="store_true",
-        help="Enable Codex CLI debug output.",
+        help="Enable Gemini CLI debug output.",
     )
     args = parser.parse_args()
     asyncio.run(main(debug=args.debug))

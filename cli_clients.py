@@ -21,6 +21,9 @@ from autogen_core.models import (
 )
 
 
+DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+
+
 def _render_user_content(content: str | Sequence[Any]) -> str:
     if isinstance(content, str):
         return content
@@ -211,7 +214,7 @@ class GeminiCliChatCompletionClient(CLIChatCompletionClient):
         self,
         *,
         cli_path: str = "gemini",
-        model: str | None = None,
+        model: str | None = DEFAULT_GEMINI_MODEL,
         extra_flags: Sequence[str] | None = None,
         debug: bool = False,
     ) -> None:
