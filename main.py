@@ -22,58 +22,62 @@ async def _run_agent(agent: AssistantAgent, task) -> str:
     raise RuntimeError(f"{agent.name} did not return a textual message.")
 
 
-async def main() -> None:
+async def main(*, debug: bool = False) -> None:
     def make_agent(name: str, system_message: str) -> AssistantAgent:
         return AssistantAgent(
             name=name,
             system_message=system_message,
-            model_client=CodexCliChatCompletionClient(debug=True),
+            model_client=CodexCliChatCompletionClient(debug=debug),
         )
 
-    planner = make_agent(
-        "planner",
+    agent_alpha = make_agent(
+        "alex",
         (
-            "You are a structured planner. Break each assignment into at most three concise steps another agent can "
-            "execute. Respond in plain text only and never attempt to invoke tools or shell commands."
+            "あなたはオートジェンを活用するエンジニアです。対等な立場で会話し、丁寧な日本語で短めの段落にまとめ、"
+            "相手の意見を尊重しながら具体的な視点を共有してください。箇条書きやツール実行は避け、自然な対話を心掛けてください。"
         ),
     )
-    executor = make_agent(
-        "executor",
+    agent_beta = make_agent(
+        "blair",
         (
-            "You elaborate on each received plan step with helpful detail and practical advice. Stick to plain text and "
-            "avoid calling tools or shell commands."
+            "あなたも同じく熟練のエンジニアです。日本語で落ち着いて応答し、相手の発言に質問や補足を添えて会話を深めてください。"
+            "ツールは呼び出さず、文章のみで返答してください。"
         ),
     )
 
-    try:
-        planner_text = await _run_agent(
-            planner,
-            "Propose a concise three-step plan for integrating the Codex CLI into an AutoGen workflow.",
-        )
-    except Exception as exc:
-        print(f"[Planner error] {exc}")
-        return
+    topic = (
+        "今度の長期休暇で訪れたい旅行先について、互いにアイデアを出し合いましょう。行きたい理由や現地で試したい体験を挙げて、"
+        "最終的に候補を一つか二つに絞ってください。"
+    )
 
-    seed_messages = [
-        TextMessage(
-            content="Please expand on each of the planner's steps with practical implementation detail.",
-            source="user",
-        ),
-        TextMessage(content=planner_text, source=planner.name),
-    ]
+    conversation: list[TextMessage] = [TextMessage(content=topic, source="user")]
+    participants = [agent_alpha, agent_beta]
+    rounds_per_agent = 2
 
-    try:
-        executor_text = await _run_agent(executor, seed_messages)
-    except Exception as exc:
-        print(f"[Executor error] {exc}")
-        return
+    print("=== 会話開始 ===")
+    print(f"user: {topic}\n")
 
-    print("=== Planner Proposal ===")
-    print(planner_text)
-    print()
-    print("=== Executor Expansion ===")
-    print(executor_text)
+    for turn in range(rounds_per_agent * len(participants)):
+        active_agent = participants[turn % len(participants)]
+        try:
+            reply_text = await _run_agent(active_agent, conversation)
+        except Exception as exc:
+            print(f"[{active_agent.name} error] {exc}")
+            return
+        conversation.append(TextMessage(content=reply_text, source=active_agent.name))
+        print(f"{active_agent.name}: {reply_text}\n")
+
+    print("=== 会話終了 ===")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Run a two-agent Codex CLI conversation.")
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable Codex CLI debug output.",
+    )
+    args = parser.parse_args()
+    asyncio.run(main(debug=args.debug))
