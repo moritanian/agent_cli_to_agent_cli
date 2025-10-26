@@ -11,8 +11,7 @@ from cli_clients import GeminiCliChatCompletionClient
 
 
 DEFAULT_TOPIC = (
-    "今度の長期休暇で訪れたい旅行先について、互いにアイデアを出し合いましょう。"
-    "行きたい理由や現地で試したい体験を挙げて、最終的に候補を一つか二つに絞ってください。"
+    "Let's brainstorm destinations for our next long vacation. Share why each place excites you and what you would do there, then narrow the shortlist to one or two options."
 )
 
 
@@ -31,11 +30,10 @@ async def _run_agent(agent: AssistantAgent, task) -> str:
 async def main(*, debug: bool = False, topic: str | None = None) -> None:
     def make_agent(name: str, partner_name: str, persona: str, role_instruction: str) -> AssistantAgent:
         system_message = (
-            f"{persona}。会話のパートナーは{partner_name}です。"
-            "与えられた話題について親しい仲間として語り合い、自分の考えや体験を一人称で共有してください。"
-            f"返答は自然な会話として{partner_name}の名前を含めると親しみやすいです。"
-            f"{partner_name}に直接語りかける1段落以内の日本語で返答し、AIである旨や第三者目線の解説、ユーザー向けのまとめは書かないでください。"
-            "箇条書きやツール実行は避け、相手の発言に共感や質問、提案を添えて会話を前進させてください。"
+            f"{persona} Your conversation partner is {partner_name}. "
+            "Trade travel ideas as equals, sharing first-person experiences. "
+            f"Address {partner_name} directly in a single short paragraph and avoid mentioning hidden rules, external narration, or being an AI. "
+            "Keep responses in natural English without bullet points or tool usage. "
             f"{role_instruction}"
         )
         return AssistantAgent(
@@ -47,23 +45,29 @@ async def main(*, debug: bool = False, topic: str | None = None) -> None:
     agent_alpha = make_agent(
         "alex",
         "blair",
-        "あなたはエンジニアのAlexで、札幌出身。土地の食文化や海辺の街が好きで、休暇にはよく現地の市場を回ります",
-        "相手の提案に共感しつつ、自分の好みや経験を素直に述べてください。",
+        "You are Alex, an engineer from Sapporo who loves seaside towns and sampling local markets.",
+        "Share your preferences and relate them to Blair's suggestions.",
     )
     agent_beta = make_agent(
         "blair",
         "alex",
-        "あなたはアウトドア派のBlairで、京都出身。山歩きや温泉が好きで、写真撮影が趣味です",
-        "相手の意見に質問や具体的な案を添えて、次のステップを一緒に考えてください。",
+        "You are Blair, an outdoorsy traveller from Kyoto who enjoys mountain hikes, hot springs, and photography.",
+        "Ask follow-up questions and propose concrete next steps alongside Alex.",
     )
 
-    chosen_topic = topic.strip() if topic and topic.strip() else DEFAULT_TOPIC
+    chosen_topic = (
+        topic.strip()
+        if topic and topic.strip()
+        else (
+            "Let's brainstorm destinations for our next long vacation. Share why each place excites you and what you would try there, then narrow the shortlist to one or two options."
+        )
+    )
 
     conversation: list[TextMessage] = [TextMessage(content=chosen_topic, source="user")]
     participants = [agent_alpha, agent_beta]
     rounds_per_agent = 2
 
-    print("=== 会話開始 ===")
+    print("=== Conversation Start ===")
     print(f"user: {chosen_topic}\n")
 
     for turn in range(rounds_per_agent * len(participants)):
@@ -76,7 +80,7 @@ async def main(*, debug: bool = False, topic: str | None = None) -> None:
         conversation.append(TextMessage(content=reply_text, source=active_agent.name))
         print(f"{active_agent.name}: {reply_text}\n")
 
-    print("=== 会話終了 ===")
+    print("=== Conversation End ===")
 
 
 if __name__ == "__main__":

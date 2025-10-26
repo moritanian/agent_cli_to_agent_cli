@@ -26,42 +26,42 @@ const FALLBACK_THEMES: AgentTrait[] = [
     icon: "🛡️",
     color: "#8ecae6",
     glow: "rgba(142, 202, 230, 0.6)",
-    persona: "Sentinelとして自然に対話してください",
+    persona: "Speak naturally as the Sentinel and collaborate with the party.",
   },
   {
     title: "Rogue",
     icon: "🗡️",
     color: "#f9a03f",
     glow: "rgba(249, 160, 63, 0.6)",
-    persona: "Rogueとして自然に対話してください",
+    persona: "Speak naturally as the Rogue and collaborate with the party.",
   },
   {
     title: "Arcanist",
     icon: "🪄",
     color: "#bb6bd9",
     glow: "rgba(187, 107, 217, 0.6)",
-    persona: "Arcanistとして自然に対話してください",
+    persona: "Speak naturally as the Arcanist and collaborate with the party.",
   },
   {
     title: "Ranger",
     icon: "🏹",
     color: "#6ee7b7",
     glow: "rgba(110, 231, 183, 0.55)",
-    persona: "Rangerとして自然に対話してください",
+    persona: "Speak naturally as the Ranger and collaborate with the party.",
   },
   {
     title: "Smith",
     icon: "⚒️",
     color: "#f97316",
     glow: "rgba(249, 115, 22, 0.5)",
-    persona: "Smithとして自然に対話してください",
+    persona: "Speak naturally as the Smith and collaborate with the party.",
   },
   {
     title: "Bard",
     icon: "🎻",
     color: "#f472b6",
     glow: "rgba(244, 114, 182, 0.55)",
-    persona: "Bardとして自然に対話してください",
+    persona: "Speak naturally as the Bard and collaborate with the party.",
   },
 ];
 
@@ -86,7 +86,7 @@ function buildGrid(snapshot: Snapshot | null, themes: ThemeMap): JSX.Element {
   if (!snapshot) {
     return (
       <div className="grid-placeholder">
-        Reset を押してシミュレーションを開始してください。
+        Press Reset to begin the simulation.
       </div>
     );
   }
@@ -144,7 +144,7 @@ function renderLegend(snapshot: Snapshot | null, themes: ThemeMap): JSX.Element 
   if (!snapshot) {
     return (
       <div className="legend">
-        <span className="legend-empty">空きマス</span>
+        <span className="legend-empty">Empty tile</span>
       </div>
     );
   }
@@ -180,7 +180,7 @@ function renderLegend(snapshot: Snapshot | null, themes: ThemeMap): JSX.Element 
 
 function ConversationLog({ messages }: { messages: ConversationEntry[] }) {
   if (!messages.length) {
-    return <p className="placeholder">まだ会話ログはありません。</p>;
+    return <p className="placeholder">No conversation yet.</p>;
   }
   return (
     <ul className="conversation-list">
@@ -196,7 +196,7 @@ function ConversationLog({ messages }: { messages: ConversationEntry[] }) {
 
 function DebugPanel({ history }: { history: TurnResult[] }) {
   if (!history.length) {
-    return <p className="placeholder">ターンを進めるとプロンプトと応答が表示されます。</p>;
+    return <p className="placeholder">Advance a turn to view prompts and responses.</p>;
   }
   return (
     <div className="debug-list">
@@ -286,12 +286,12 @@ export default function App(): JSX.Element {
     <div className="app">
       <header>
         <h1>Sandbox Agent Playground</h1>
-        <p>LLMエージェントの挙動をファンタジーな冒険盤で見届けましょう。</p>
+        <p>Watch LLM-driven adventurers coordinate on a glowing battle grid.</p>
       </header>
 
       <section className="controls">
         <div className="field">
-          <label htmlFor="grid">Grid サイズ</label>
+          <label htmlFor="grid">Grid Size</label>
           <input
             id="grid"
             type="number"
@@ -307,7 +307,7 @@ export default function App(): JSX.Element {
           />
         </div>
         <div className="field">
-          <label htmlFor="agents">Agent 数</label>
+          <label htmlFor="agents">Number of Agents</label>
           <input
             id="agents"
             type="number"
@@ -323,7 +323,7 @@ export default function App(): JSX.Element {
           />
         </div>
         <div className="field">
-          <label htmlFor="seed">Seed (任意)</label>
+          <label htmlFor="seed">Seed (optional)</label>
           <input
             id="seed"
             type="text"
@@ -365,7 +365,7 @@ export default function App(): JSX.Element {
 
       <main className="layout">
         <section className="board">
-          <h2>冒険盤</h2>
+          <h2>Adventure Board</h2>
           <div className="board-diorama">
             <div className="board-overlay" />
             {buildGrid(snapshot, themeMap)}
@@ -374,11 +374,11 @@ export default function App(): JSX.Element {
         </section>
         <section className="panel">
           <div className="panel-section">
-            <h2>会話ログ</h2>
+            <h2>Conversation Log</h2>
             <ConversationLog messages={snapshot?.messages ?? []} />
           </div>
           <div className="panel-section">
-            <h2>デバッグパネル</h2>
+            <h2>Debug Panel</h2>
             <DebugPanel history={history} />
           </div>
         </section>

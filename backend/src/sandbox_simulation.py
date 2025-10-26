@@ -39,15 +39,14 @@ class AgentState:
 
 def _build_system_prompt(persona: str, roster: str) -> str:
     return (
-        f"{persona} 仲間たちは {roster} です。"
-        "与えられた話題や状況について親しい冒険仲間として語り合い、自分の考えや体験を一人称で共有してください。"
-        "誰かに話しかけるときは観測データのlegal_actions内で示された相手を選び、名前を呼びかける形で1段落以内の日本語で返答してください。"
-        "AIである旨や第三者目線の解説、ユーザー向けのまとめは書かないでください。"
-        "箇条書きやツール実行は避け、相手の発言に共感や質問、提案を添えて会話を前進させてください。"
-        "観測データに含まれるlegal_actionsから必ず1つを選び、その内容と整合するJSONだけを返答してください。"
-        "必ず以下のJSON形式のみで応答してください："
-        '{"action": "move"|"talk"|"wait", "direction": "up|down|left|right", "target": "agent_name", "message": "text"} '
-        "moveの場合はdirectionを設定し、talkの場合はtargetとmessageを設定してください。waitを選ぶ場合は他のフィールドを省略できます。"
+        f"{persona} Your teammates are {roster}. "
+        "Speak like a friendly adventurer, sharing your thoughts in the first person. "
+        "When you choose a talk action, pick one of the characters listed in legal_actions and greet them by name in a short English paragraph. "
+        "Do not mention that you are an AI, write third-person commentary, or summarise for the user. "
+        "Avoid bullet points and tool usage; respond with empathy, questions, or suggestions that move the party forward. "
+        "You must select exactly one option from legal_actions and return JSON that matches it. "
+        'Return JSON only in the form {"action": ..., "direction"|"target"|"message": ...}. '
+        "For move, set direction. For talk, set target and message. For wait, omit the other fields."
     )
 
 
@@ -152,35 +151,35 @@ class SandboxSimulation:
                 "icon": "🛡️",
                 "color": "#8ecae6",
                 "glow": "rgba(142, 202, 230, 0.6)",
-                "persona": "あなたはエンジニアのAlexで、札幌出身。海辺の街と市場巡りが大好きです",
+                "persona": "You are Alex, an engineer from Sapporo who loves seaside towns and bustling markets.",
             },
             {
                 "title": "Blair",
                 "icon": "🗡️",
                 "color": "#f9a03f",
                 "glow": "rgba(249, 160, 63, 0.6)",
-                "persona": "あなたは京都出身の冒険者Blair。山歩きと温泉、写真撮影が趣味です",
+                "persona": "You are Blair, an adventurer from Kyoto who enjoys mountain hikes, hot springs, and photography.",
             },
             {
                 "title": "Kai",
                 "icon": "🪄",
                 "color": "#bb6bd9",
                 "glow": "rgba(187, 107, 217, 0.6)",
-                "persona": "あなたは旅する魔術研究者Kai。星空観測と古文書集めが好きです",
+                "persona": "You are Kai, a travelling arcane researcher who studies starlit skies and ancient manuscripts.",
             },
             {
                 "title": "Mira",
                 "icon": "🏹",
                 "color": "#6ee7b7",
                 "glow": "rgba(110, 231, 183, 0.55)",
-                "persona": "あなたは森で鍛えた斥候Mira。静かな洞察と素早い判断が得意です",
+                "persona": "You are Mira, a ranger honed by the forest with keen insight and swift judgement.",
             },
             {
                 "title": "Ren",
                 "icon": "⚒️",
                 "color": "#f97316",
                 "glow": "rgba(249, 115, 22, 0.5)",
-                "persona": "あなたは工匠Ren。未知の装置を見つけるとすぐに研究したくなります",
+                "persona": "You are Ren, a tinkerer who cannot resist dismantling mysterious devices to learn their secrets.",
             },
         ]
 
@@ -219,16 +218,16 @@ class SandboxSimulation:
             profile.setdefault("icon", "★")
             profile.setdefault("color", "#7dd3fc")
             profile.setdefault("glow", "rgba(125, 211, 252, 0.55)")
-            profile.setdefault("persona", f"{profile['title']}として自然に対話してください")
+            profile.setdefault("persona", f"Speak naturally as {profile['title']} with your party.")
             self.agent_profiles[name] = profile
 
         for name in agent_names:
             roster = [
-                f"{self.agent_profiles[other]['title']}（{other}）"
+                f"{self.agent_profiles[other]['title']} ({other})"
                 for other in agent_names
                 if other != name
             ]
-            roster_desc = "、".join(roster)
+            roster_desc = ", ".join(roster)
             persona = self.agent_profiles[name]["persona"]
             controllers[name] = AssistantAgent(
                 name=name,
@@ -330,8 +329,8 @@ class SandboxSimulation:
 
     def _build_prompt(self, observation: Dict[str, object]) -> str:
         return (
-            "現在の状況と選択可能な合法手をJSONで渡します。"
-            " legal_actionsの中から必ず1つを選び、指示されたJSON形式のみで応答してください。\n"
+            "You will receive the current situation and the available legal actions as JSON. "
+            "Choose exactly one entry from legal_actions and respond only with the specified JSON shape.\n"
             f"{json.dumps(observation, ensure_ascii=False)}"
         )
 
