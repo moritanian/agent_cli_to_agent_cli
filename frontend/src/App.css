@@ -267,6 +267,7 @@ header p {
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 0 18px var(--tile-glow);
+  max-width: 100%;
 }
 
 .agent-icon {
@@ -280,6 +281,22 @@ header p {
   letter-spacing: 0.04em;
   color: var(--tile-accent);
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+}
+
+.cell-dialogue {
+  display: block;
+  margin-top: 0.25rem;
+  padding: 0.3rem 0.45rem;
+  font-size: clamp(0.62rem, 1.8vw, 0.75rem);
+  line-height: 1.25;
+  color: rgba(237, 242, 255, 0.92);
+  background: rgba(15, 20, 33, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  text-align: center;
+  max-width: 12rem;
+  word-break: break-word;
+  box-shadow: 0 0 12px rgba(94, 149, 255, 0.3);
 }
 
 .cell-mote {

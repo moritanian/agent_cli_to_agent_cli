@@ -82,7 +82,22 @@ function buildThemeMap(snapshot: Snapshot | null): ThemeMap {
   return map;
 }
 
-function buildGrid(snapshot: Snapshot | null, themes: ThemeMap): JSX.Element {
+function buildSpeechMap(snapshot: Snapshot | null): Record<string, string> {
+  if (!snapshot) return {};
+  const talkMap: Record<string, string> = {};
+  snapshot.messages.forEach((entry) => {
+    if (entry.from) {
+      talkMap[entry.from] = entry.message;
+    }
+  });
+  return talkMap;
+}
+
+function buildGrid(
+  snapshot: Snapshot | null,
+  themes: ThemeMap,
+  speeches: Record<string, string>,
+): JSX.Element {
   if (!snapshot) {
     return (
       <div className="grid-placeholder">
@@ -100,6 +115,9 @@ function buildGrid(snapshot: Snapshot | null, themes: ThemeMap): JSX.Element {
         (agent) => agent.position.x === x && agent.position.y === y,
       );
       const theme = occupant ? themes[occupant.name] : undefined;
+      const speech = occupant ? speeches[occupant.name] : undefined;
+      const preview =
+        speech && speech.length > 80 ? `${speech.slice(0, 77)}…` : speech;
       cells.push(
         <div
           className={`grid-cell ${theme ? "grid-cell--occupied" : ""}`}
@@ -119,6 +137,7 @@ function buildGrid(snapshot: Snapshot | null, themes: ThemeMap): JSX.Element {
             <div className="cell-agent">
               <span className="agent-icon">{theme?.icon ?? "⭐"}</span>
               <span className="agent-label">{theme?.title ?? occupant.name}</span>
+              {preview && <span className="cell-dialogue">“{preview}”</span>}
             </div>
           ) : (
             <span className="cell-mote">✦</span>
@@ -252,6 +271,7 @@ export default function App(): JSX.Element {
 
   const canStep = useMemo(() => Boolean(snapshot), [snapshot]);
   const themeMap = useMemo(() => buildThemeMap(snapshot), [snapshot]);
+  const speechMap = useMemo(() => buildSpeechMap(snapshot), [snapshot]);
 
   useEffect(() => {
     handleReset();
@@ -375,7 +395,7 @@ export default function App(): JSX.Element {
           <h2>Adventure Board</h2>
           <div className="board-diorama">
             <div className="board-overlay" />
-            {buildGrid(snapshot, themeMap)}
+            {buildGrid(snapshot, themeMap, speechMap)}
           </div>
           {renderLegend(snapshot, themeMap)}
         </section>
