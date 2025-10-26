@@ -178,7 +178,13 @@ function renderLegend(snapshot: Snapshot | null, themes: ThemeMap): JSX.Element 
   return <div className="legend">{badges}</div>;
 }
 
-function ConversationLog({ messages }: { messages: ConversationEntry[] }) {
+function ConversationLog({
+  messages,
+  themes,
+}: {
+  messages: ConversationEntry[];
+  themes: ThemeMap;
+}) {
   if (!messages.length) {
     return <p className="placeholder">No conversation yet.</p>;
   }
@@ -187,7 +193,8 @@ function ConversationLog({ messages }: { messages: ConversationEntry[] }) {
       {messages.map((entry, idx) => (
         <li key={`${entry.turn}-${idx}`}>
           <span className="conversation-turn">Turn {entry.turn}</span>{" "}
-          <strong>{entry.from}</strong> → <strong>{entry.to}</strong>: <span>{entry.message}</span>
+          <strong>{themes[entry.from]?.title ?? entry.from}</strong> →{" "}
+          <strong>{themes[entry.to]?.title ?? entry.to}</strong>: <span>{entry.message}</span>
         </li>
       ))}
     </ul>
@@ -375,7 +382,7 @@ export default function App(): JSX.Element {
         <section className="panel">
           <div className="panel-section">
             <h2>Conversation Log</h2>
-            <ConversationLog messages={snapshot?.messages ?? []} />
+            <ConversationLog messages={snapshot?.messages ?? []} themes={themeMap} />
           </div>
           <div className="panel-section">
             <h2>Debug Panel</h2>
