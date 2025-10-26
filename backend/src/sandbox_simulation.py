@@ -18,7 +18,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from cli_clients import CodexCliChatCompletionClient, GeminiCliChatCompletionClient
+from cli_clients import (
+    CodexCliChatCompletionClient,
+    GeminiCliChatCompletionClient,
+    MockCliChatCompletionClient,
+)
 
 ActionDict = Dict[str, str]
 
@@ -243,7 +247,9 @@ class SandboxSimulation:
             return CodexCliChatCompletionClient(debug=self.debug)
         if self.backend == "gemini":
             return GeminiCliChatCompletionClient(debug=self.debug)
-        raise ValueError(f"Unsupported backend '{self.backend}'. Expected 'gemini' or 'codex'.")
+        if self.backend == "mock":
+            return MockCliChatCompletionClient()
+        raise ValueError(f"Unsupported backend '{self.backend}'. Expected 'gemini', 'codex', or 'mock'.")
 
     def snapshot(self) -> Dict[str, object]:
         return {

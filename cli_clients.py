@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import random
+import re
 from typing import Any, Callable, Optional, Sequence
 
 from autogen_core import CancellationToken, FunctionCall
@@ -309,6 +311,119 @@ class CodexCliChatCompletionClient(CLIChatCompletionClient):
         if agent_messages:
             return "\n".join(agent_messages).strip()
         return text
+
+
+_JSON_BLOCK_RE = re.compile(r"\{.*?\}", re.DOTALL)
+
+
+class MockCliChatCompletionClient(ChatCompletionClient):
+    """Mock client that randomly selects one of the provided legal actions."""
+
+    def __init__(self, *, seed: int | None = None) -> None:
+        super().__init__()
+        self._model_info = ModelInfo(family="mock", multiple_system_messages=True)
+        self._capabilities = ModelCapabilities(json_output=False, function_calling=False, vision=False)
+        self._rng = random.Random(seed)
+        self._last_usage = RequestUsage(prompt_tokens=0, completion_tokens=0)
+
+    def actual_usage(self) -> RequestUsage:
+        return self._last_usage
+
+    def total_usage(self) -> RequestUsage:
+        return self._last_usage
+
+    async def create(
+        self,
+        messages: Sequence[LLMMessage],
+        *,
+        tools: Sequence[Any] = (),
+        tool_choice: Any = "auto",
+        json_output: Optional[bool | type[Any]] = None,
+        extra_create_args: Optional[dict[str, Any]] = None,
+        cancellation_token: Optional[CancellationToken] = None,
+    ) -> CreateResult:
+        content = self._mock_response(messages)
+        usage = RequestUsage(prompt_tokens=1, completion_tokens=1)
+        self._last_usage = usage
+        return CreateResult(
+            finish_reason="stop",
+            content=content,
+            usage=usage,
+            cached=False,
+            logprobs=None,
+            thought=None,
+        )
+
+    async def create_stream(
+        self,
+        messages: Sequence[LLMMessage],
+        *,
+        tools: Sequence[Any] = (),
+        tool_choice: Any = "auto",
+        json_output: Optional[bool | type[Any]] = None,
+        extra_create_args: Optional[dict[str, Any]] = None,
+        cancellation_token: Optional[CancellationToken] = None,
+    ):
+        async def _generator():
+            content = self._mock_response(messages)
+            usage = RequestUsage(prompt_tokens=1, completion_tokens=1)
+            self._last_usage = usage
+            yield content
+            yield CreateResult(
+                finish_reason="stop",
+                content=content,
+                usage=usage,
+                cached=False,
+                logprobs=None,
+                thought=None,
+            )
+
+        return _generator()
+
+    def _mock_response(self, messages: Sequence[LLMMessage]) -> str:
+        prompt = ""
+        for message in messages:
+            if isinstance(message, UserMessage):
+                prompt = _render_user_content(message.content)
+        candidates = _JSON_BLOCK_RE.findall(prompt)
+        payload = {}
+        for raw in reversed(candidates):
+            try:
+                payload = json.loads(raw)
+                break
+            except json.JSONDecodeError:
+                continue
+        legal_actions = payload.get("legal_actions") if isinstance(payload, dict) else None
+        if not isinstance(legal_actions, list) or not legal_actions:
+            return json.dumps({"action": "wait"})
+        action = self._rng.choice(legal_actions)
+        kind = action.get("action")
+        if kind == "move":
+            direction = action.get("direction", "up")
+            return json.dumps({"action": "move", "direction": direction})
+        if kind == "talk":
+            target = action.get("target", "ally")
+            alias = action.get("target_title") or target
+            message = f"Hey {alias}, let's keep moving!"
+            return json.dumps({"action": "talk", "target": target, "message": message})
+        return json.dumps({"action": "wait"})
+
+    async def close(self) -> None:
+        return None
+
+    def count_tokens(self, messages: Sequence[LLMMessage], *, tools: Sequence[Any] = ()) -> int:
+        return 1
+
+    def remaining_tokens(self, messages: Sequence[LLMMessage], *, tools: Sequence[Any] = ()) -> int:
+        return 10_000
+
+    @property
+    def capabilities(self) -> ModelCapabilities:  # type: ignore[override]
+        return self._capabilities
+
+    @property
+    def model_info(self) -> ModelInfo:
+        return self._model_info
 
 
 def _parse_json(raw_output: str) -> dict[str, Any]:

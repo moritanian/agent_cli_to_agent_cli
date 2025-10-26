@@ -13,7 +13,7 @@ BACKEND_SRC = Path(__file__).resolve().parent / "backend" / "src"
 if str(BACKEND_SRC) not in sys.path:
     sys.path.insert(0, str(BACKEND_SRC))
 
-from sandbox_backend.sandbox_simulation import SandboxSimulation
+from sandbox_simulation import SandboxSimulation
 
 
 async def run_simulation(

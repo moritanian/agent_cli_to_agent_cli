@@ -48,14 +48,14 @@ multi-agent runs:
 3. Open the printed local URL (default `http://localhost:5173`) to step the
    simulation turn-by-turn, inspect agent prompts/responses, and review the
    shared conversation log. Use the controls at the top to adjust grid size,
-   agent count, or switch between the Gemini and Codex CLI backends before
-   hitting Reset.
+   agent count, or switch between the Gemini, Codex, and in-memory Mock LLM
+   backends before hitting Reset.
 
 ## Customisation tips
 
-- From the CLI, run `python sandbox_game.py --backend codex` (or `--backend gemini`)
-  to switch LLM providers; the web UI exposes the same toggle in the control
-  panel.
+- From the CLI, run `python sandbox_game.py --backend codex|gemini|mock` to
+  switch LLM providers; the web UI exposes the same toggle in the control
+  panel (the mock backend picks random actions for quick smoke tests).
 - Both `GeminiCliChatCompletionClient` and `CodexCliChatCompletionClient` accept
   extra CLI flags if you need to tune temperature, model IDs, or safety settings.
 - Swap the hard-coded prompts in `main.py` or wire the shared `SandboxSimulation`
