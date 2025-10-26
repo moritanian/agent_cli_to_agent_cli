@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.scripts]
-serve = "backend.serve:main"
+serve = "sandbox_backend.serve:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
