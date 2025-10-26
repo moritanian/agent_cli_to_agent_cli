@@ -42,8 +42,8 @@ multi-agent runs:
 2. Install and launch the Vite + React frontend:
    ```bash
    cd frontend
-   npm install
-   npm run dev
+   yarn install
+   yarn dev
    ```
 3. Open the printed local URL (default `http://localhost:5173`) to step the
    simulation turn-by-turn, inspect agent prompts/responses, and review the
