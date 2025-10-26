@@ -29,6 +29,26 @@ The multi-agent version runs two `AssistantAgent`s in sequence (planner →
 executor), passing the first agent's reply as context for the second so you can
 observe a lightweight two-party exchange.
 
+## Sandbox Web UI
+
+This repository also includes an interactive sandbox viewer for debugging
+multi-agent runs:
+
+1. Start the FastAPI backend:
+   ```bash
+   cd backend
+   uv run serve --reload
+   ```
+2. Install and launch the Vite + React frontend:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+3. Open the printed local URL (default `http://localhost:5173`) to step the
+   simulation turn-by-turn, inspect agent prompts/responses, and review the
+   shared conversation log.
+
 ## Customisation tips
 
 - Set `GeminiCliChatCompletionClient(model=...)` if you want a specific Gemini model; leaving it `None` lets the CLI pick its default (usually Gemini 2.5 Pro).
