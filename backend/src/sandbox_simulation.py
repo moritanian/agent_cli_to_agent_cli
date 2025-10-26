@@ -469,8 +469,8 @@ class SandboxSimulation:
                 for entry in legal_actions
                 if entry.get("action") == "talk"
             }
-        if action.get("target") not in allowed:
-            return {"action": "wait", "notes": f"Illegal talk rejected for {agent_name}"}
+            if action.get("target") not in allowed:
+                return {"action": "wait", "notes": f"Illegal talk rejected for {agent_name}"}
         return action
 
     def history(self) -> List[Dict[str, object]]:

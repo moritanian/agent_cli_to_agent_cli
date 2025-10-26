@@ -321,7 +321,7 @@ class MockCliChatCompletionClient(ChatCompletionClient):
 
     def __init__(self, *, seed: int | None = None) -> None:
         super().__init__()
-        self._model_info = ModelInfo(family="mock", multiple_system_messages=True)
+        self._model_info = ModelInfo(family="mock", multiple_system_messages=True, vision=False)
         self._capabilities = ModelCapabilities(json_output=False, function_calling=False, vision=False)
         self._rng = random.Random(seed)
         self._last_usage = RequestUsage(prompt_tokens=0, completion_tokens=0)
