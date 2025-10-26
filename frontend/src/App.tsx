@@ -349,7 +349,7 @@ export default function App(): JSX.Element {
                 }))
               }
             />
-            Gemini CLI debug
+            Enable CLI debug logs
           </label>
         </div>
         <div className="actions">
