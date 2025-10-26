@@ -5,18 +5,11 @@ from __future__ import annotations
 import json
 import random
 import re
-import sys
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.messages import TextMessage
-
-# Make project root (containing cli_clients) available when installed as a package.
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
 
 from cli_clients import (
     CodexCliChatCompletionClient,

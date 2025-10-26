@@ -4,14 +4,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import sys
-from pathlib import Path
 from typing import Any, Dict
-
-# Ensure backend package (under backend/src) is importable when running CLI directly.
-BACKEND_SRC = Path(__file__).resolve().parent / "backend" / "src"
-if str(BACKEND_SRC) not in sys.path:
-    sys.path.insert(0, str(BACKEND_SRC))
 
 from sandbox_simulation import SandboxSimulation
 

@@ -2,10 +2,11 @@
 
 A minimal AutoGen AgentChat (v0.10) proof-of-concept that shells out to the
 Gemini CLI in non-interactive mode (`gemini -p`) via a custom
-`ChatCompletionClient`. Two entry points are provided:
+`ChatCompletionClient`. Two entry points are provided under `backend/src` (run
+them from `backend/` with `uv run python -m <module>`):
 
-- `main_single_agent.py` — original single-assistant demo that answers a prompt.
-- `main.py` — new round-robin sample where two Gemini-backed agents collaborate.
+- `single_agent_demo.py` — original single-assistant demo that answers a prompt.
+- `two_agent_demo.py` — new round-robin sample where two Gemini-backed agents collaborate.
 
 ## Prerequisites
 
@@ -17,11 +18,13 @@ Gemini CLI in non-interactive mode (`gemini -p`) via a custom
 ## Usage
 
 ```bash
+cd backend
+
 # Single-assistant ping
-python3 main_single_agent.py
+uv run python -m single_agent_demo
 
 # Two-agent collaboration
-python3 main.py
+uv run python -m two_agent_demo
 ```
 
 Both scripts share the same Gemini CLI-backed client defined in `cli_clients.py`.
@@ -53,13 +56,13 @@ multi-agent runs:
 
 ## Customisation tips
 
-- From the CLI, run `python sandbox_game.py --backend codex|gemini|mock` to
+- From the CLI, run `uv run python -m sandbox_game --backend codex|gemini|mock` to
   switch LLM providers; the web UI exposes the same toggle in the control
   panel (the mock backend picks random actions for quick smoke tests).
 - Enable "Add player-controlled agent" in the web UI (or pass `--player` to the
   CLI) to manually choose actions from the legal move list each turn.
 - Both `GeminiCliChatCompletionClient` and `CodexCliChatCompletionClient` accept
   extra CLI flags if you need to tune temperature, model IDs, or safety settings.
-- Swap the hard-coded prompts in `main.py` or wire the shared `SandboxSimulation`
+- Swap the hard-coded prompts in `two_agent_demo.py` or wire the shared `SandboxSimulation`
   into your own AutoGen team configuration to experiment with different agent
   personas.

@@ -19,7 +19,15 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-py-modules = ["main", "sandbox_simulation", "serve"]
+py-modules = [
+  "cli_clients",
+  "main",
+  "sandbox_game",
+  "sandbox_simulation",
+  "serve",
+  "single_agent_demo",
+  "two_agent_demo",
+]
 
 [tool.uv]
 package = true
