@@ -443,12 +443,38 @@ header p {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-height: 0;
 }
 
 .panel-section {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  min-height: 0;
+}
+
+.panel-section--log {
+  max-height: clamp(200px, 40vh, 340px);
+}
+
+.panel-section--debug {
+  flex: 1;
+  min-height: 0;
+}
+
+.log-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.35rem;
+}
+
+.debug-scroll {
+  flex: 1;
+  min-height: 0;
+  max-height: clamp(240px, 45vh, 420px);
+  overflow-y: auto;
+  padding-right: 0.35rem;
 }
 
 .conversation-list {

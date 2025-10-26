@@ -582,13 +582,17 @@ export default function App(): JSX.Element {
           )}
         </section>
         <section className="panel">
-          <div className="panel-section">
+          <div className="panel-section panel-section--log">
             <h2>Conversation Log</h2>
-            <ConversationLog messages={snapshot?.messages ?? []} themes={themeMap} />
+            <div className="log-scroll">
+              <ConversationLog messages={snapshot?.messages ?? []} themes={themeMap} />
+            </div>
           </div>
-          <div className="panel-section">
+          <div className="panel-section panel-section--debug">
             <h2>Debug Panel</h2>
-            <DebugPanel history={history} themes={themeMap} />
+            <div className="debug-scroll">
+              <DebugPanel history={history} themes={themeMap} />
+            </div>
           </div>
         </section>
       </main>
