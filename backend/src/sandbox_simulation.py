@@ -37,11 +37,12 @@ class AgentState:
         return {"x": self.x, "y": self.y}
 
 
-def _build_system_prompt(persona: str, partner_name: str) -> str:
+def _build_system_prompt(persona: str, roster: str) -> str:
     return (
-        f"{persona} 会話のパートナーは{partner_name}です。"
-        "与えられた話題や状況について親しい仲間として語り合い、自分の考えや体験を一人称で共有してください。"
-        f"{partner_name}の名前を含めて直接語りかける1段落以内の日本語で返答し、AIである旨や第三者目線の解説、ユーザー向けのまとめは書かないでください。"
+        f"{persona} 仲間たちは {roster} です。"
+        "与えられた話題や状況について親しい冒険仲間として語り合い、自分の考えや体験を一人称で共有してください。"
+        "誰かに話しかけるときは観測データのlegal_actions内で示された相手を選び、名前を呼びかける形で1段落以内の日本語で返答してください。"
+        "AIである旨や第三者目線の解説、ユーザー向けのまとめは書かないでください。"
         "箇条書きやツール実行は避け、相手の発言に共感や質問、提案を添えて会話を前進させてください。"
         "観測データに含まれるlegal_actionsから必ず1つを選び、その内容と整合するJSONだけを返答してください。"
         "必ず以下のJSON形式のみで応答してください："
@@ -132,8 +133,8 @@ class SandboxSimulation:
         debug: bool = False,
         seed: Optional[int] = None,
     ) -> None:
-        if num_agents != 2:
-            raise ValueError("This prototype currently supports exactly 2 agents.")
+        if num_agents < 2:
+            raise ValueError("This prototype currently supports at least 2 agents.")
         self.num_agents = num_agents
         self.grid_size = grid_size
         self.debug = debug
@@ -144,17 +145,51 @@ class SandboxSimulation:
         self.agents: List[AgentState] = []
         self.conversation_log: List[Dict[str, str]] = []
         self.debug_history: List[Dict[str, object]] = []
-
-        self._personas = {
-            "agent1": "あなたはエンジニアのAlexで、札幌出身。土地の食文化や海辺の街が好きで、休日には市場を散策するのが楽しみです",
-            "agent2": "あなたはアウトドア派のBlairで、京都出身。山歩きや温泉巡り、カメラでの撮影が好きです",
-        }
+        self.agent_profiles: Dict[str, Dict[str, str]] = {}
+        self._personas_pool: List[Dict[str, str]] = [
+            {
+                "title": "Alex",
+                "icon": "🛡️",
+                "color": "#8ecae6",
+                "glow": "rgba(142, 202, 230, 0.6)",
+                "persona": "あなたはエンジニアのAlexで、札幌出身。海辺の街と市場巡りが大好きです",
+            },
+            {
+                "title": "Blair",
+                "icon": "🗡️",
+                "color": "#f9a03f",
+                "glow": "rgba(249, 160, 63, 0.6)",
+                "persona": "あなたは京都出身の冒険者Blair。山歩きと温泉、写真撮影が趣味です",
+            },
+            {
+                "title": "Kai",
+                "icon": "🪄",
+                "color": "#bb6bd9",
+                "glow": "rgba(187, 107, 217, 0.6)",
+                "persona": "あなたは旅する魔術研究者Kai。星空観測と古文書集めが好きです",
+            },
+            {
+                "title": "Mira",
+                "icon": "🏹",
+                "color": "#6ee7b7",
+                "glow": "rgba(110, 231, 183, 0.55)",
+                "persona": "あなたは森で鍛えた斥候Mira。静かな洞察と素早い判断が得意です",
+            },
+            {
+                "title": "Ren",
+                "icon": "⚒️",
+                "color": "#f97316",
+                "glow": "rgba(249, 115, 22, 0.5)",
+                "persona": "あなたは工匠Ren。未知の装置を見つけるとすぐに研究したくなります",
+            },
+        ]
 
     def reset(self) -> Dict[str, object]:
         """Initialise positions and re-create agents."""
         self.turn = 0
         self.conversation_log = []
         self.debug_history = []
+        self.agent_profiles = {}
 
         positions = self._initial_positions()
         controllers = self._build_controllers()
@@ -178,12 +213,26 @@ class SandboxSimulation:
     def _build_controllers(self) -> Dict[str, AssistantAgent]:
         controllers: Dict[str, AssistantAgent] = {}
         agent_names = [f"agent{i+1}" for i in range(self.num_agents)]
+        for index, name in enumerate(agent_names):
+            profile = self._personas_pool[index % len(self._personas_pool)].copy()
+            profile.setdefault("title", f"Agent {index + 1}")
+            profile.setdefault("icon", "★")
+            profile.setdefault("color", "#7dd3fc")
+            profile.setdefault("glow", "rgba(125, 211, 252, 0.55)")
+            profile.setdefault("persona", f"{profile['title']}として自然に対話してください")
+            self.agent_profiles[name] = profile
+
         for name in agent_names:
-            partner = next(n for n in agent_names if n != name)
-            persona = self._personas.get(name, f"{name}として自然に対話してください")
+            roster = [
+                f"{self.agent_profiles[other]['title']}（{other}）"
+                for other in agent_names
+                if other != name
+            ]
+            roster_desc = "、".join(roster)
+            persona = self.agent_profiles[name]["persona"]
             controllers[name] = AssistantAgent(
                 name=name,
-                system_message=_build_system_prompt(persona, partner),
+                system_message=_build_system_prompt(persona, roster_desc),
                 model_client=GeminiCliChatCompletionClient(debug=self.debug),
             )
         return controllers
@@ -196,6 +245,7 @@ class SandboxSimulation:
                 {"name": agent.name, "position": agent.position}
                 for agent in self.agents
             ],
+            "traits": self.agent_profiles,
             "messages": list(self.conversation_log),
         }
 
@@ -209,12 +259,17 @@ class SandboxSimulation:
 
         for agent in self.agents:
             legal_actions = _legal_actions(agent, self.agents, self.grid_size)
+            for entry in legal_actions:
+                if entry["action"] == "talk":
+                    profile = self.agent_profiles.get(entry["target"], {})
+                    entry["target_title"] = profile.get("title", entry["target"])
             observation: Dict[str, object] = {
                 "you": agent.name,
                 "positions": {state.name: state.position for state in self.agents},
                 "grid_size": self.grid_size,
                 "turn": self.turn,
                 "legal_actions": legal_actions,
+                "traits": self.agent_profiles,
             }
             if agent.inbox:
                 observation["message"] = agent.inbox

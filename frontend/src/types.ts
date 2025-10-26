@@ -8,6 +8,14 @@ export interface AgentSnapshot {
   position: Position;
 }
 
+export interface AgentTrait {
+  title: string;
+  icon: string;
+  color: string;
+  glow: string;
+  persona: string;
+}
+
 export interface ConversationEntry {
   from: string;
   to: string;
@@ -19,6 +27,7 @@ export interface Snapshot {
   turn: number;
   gridSize: number;
   agents: AgentSnapshot[];
+  traits: Record<string, AgentTrait>;
   messages: ConversationEntry[];
 }
 
@@ -26,6 +35,7 @@ export interface LegalAction {
   action: "move" | "talk" | "wait";
   direction?: "up" | "down" | "left" | "right";
   target?: string;
+  target_title?: string;
 }
 
 export interface DebugEntry {

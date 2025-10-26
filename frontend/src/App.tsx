@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import "./App.css";
-import {
-  resetSimulation,
-  stepSimulation,
-} from "./api";
+import { resetSimulation, stepSimulation } from "./api";
 import type {
+  AgentTrait,
   ConversationEntry,
   DebugEntry,
   ResetConfig,
@@ -12,23 +11,7 @@ import type {
   TurnResult,
 } from "./types";
 
-const AGENT_THEME: Record<
-  string,
-  { title: string; icon: string; color: string; glow: string }
-> = {
-  agent1: {
-    title: "Alex",
-    icon: "🛡️",
-    color: "var(--agent-one)",
-    glow: "var(--agent-one-glow)",
-  },
-  agent2: {
-    title: "Blair",
-    icon: "🗡️",
-    color: "var(--agent-two)",
-    glow: "var(--agent-two-glow)",
-  },
-};
+type ThemeMap = Record<string, AgentTrait>;
 
 const DEFAULT_CONFIG: ResetConfig = {
   gridSize: 3,
@@ -37,7 +20,69 @@ const DEFAULT_CONFIG: ResetConfig = {
   debug: false,
 };
 
-function buildGrid(snapshot: Snapshot | null): JSX.Element {
+const FALLBACK_THEMES: AgentTrait[] = [
+  {
+    title: "Sentinel",
+    icon: "🛡️",
+    color: "#8ecae6",
+    glow: "rgba(142, 202, 230, 0.6)",
+    persona: "Sentinelとして自然に対話してください",
+  },
+  {
+    title: "Rogue",
+    icon: "🗡️",
+    color: "#f9a03f",
+    glow: "rgba(249, 160, 63, 0.6)",
+    persona: "Rogueとして自然に対話してください",
+  },
+  {
+    title: "Arcanist",
+    icon: "🪄",
+    color: "#bb6bd9",
+    glow: "rgba(187, 107, 217, 0.6)",
+    persona: "Arcanistとして自然に対話してください",
+  },
+  {
+    title: "Ranger",
+    icon: "🏹",
+    color: "#6ee7b7",
+    glow: "rgba(110, 231, 183, 0.55)",
+    persona: "Rangerとして自然に対話してください",
+  },
+  {
+    title: "Smith",
+    icon: "⚒️",
+    color: "#f97316",
+    glow: "rgba(249, 115, 22, 0.5)",
+    persona: "Smithとして自然に対話してください",
+  },
+  {
+    title: "Bard",
+    icon: "🎻",
+    color: "#f472b6",
+    glow: "rgba(244, 114, 182, 0.55)",
+    persona: "Bardとして自然に対話してください",
+  },
+];
+
+function buildThemeMap(snapshot: Snapshot | null): ThemeMap {
+  if (!snapshot) {
+    return {};
+  }
+  const traits = snapshot.traits ?? {};
+  const map: ThemeMap = {};
+  snapshot.agents.forEach((agent, index) => {
+    const profile = traits[agent.name];
+    if (profile) {
+      map[agent.name] = profile;
+    } else {
+      map[agent.name] = FALLBACK_THEMES[index % FALLBACK_THEMES.length];
+    }
+  });
+  return map;
+}
+
+function buildGrid(snapshot: Snapshot | null, themes: ThemeMap): JSX.Element {
   if (!snapshot) {
     return (
       <div className="grid-placeholder">
@@ -52,9 +97,9 @@ function buildGrid(snapshot: Snapshot | null): JSX.Element {
     const cells = [];
     for (let x = 0; x < gridSize; x += 1) {
       const occupant = agents.find(
-        (agent) => agent.position.x === x && agent.position.y === y
+        (agent) => agent.position.x === x && agent.position.y === y,
       );
-      const theme = occupant ? AGENT_THEME[occupant.name] : undefined;
+      const theme = occupant ? themes[occupant.name] : undefined;
       cells.push(
         <div
           className={`grid-cell ${theme ? "grid-cell--occupied" : ""}`}
@@ -64,7 +109,7 @@ function buildGrid(snapshot: Snapshot | null): JSX.Element {
               ? ({
                   "--tile-accent": theme.color,
                   "--tile-glow": theme.glow,
-                } as React.CSSProperties)
+                } as CSSProperties)
               : {}
           }
         >
@@ -73,20 +118,18 @@ function buildGrid(snapshot: Snapshot | null): JSX.Element {
           {occupant ? (
             <div className="cell-agent">
               <span className="agent-icon">{theme?.icon ?? "⭐"}</span>
-              <span className="agent-label">
-                {theme?.title ?? occupant.name}
-              </span>
+              <span className="agent-label">{theme?.title ?? occupant.name}</span>
             </div>
           ) : (
             <span className="cell-mote">✦</span>
           )}
-        </div>
+        </div>,
       );
     }
     rows.push(
       <div className="grid-row" key={`row-${y}`}>
         {cells}
-      </div>
+      </div>,
     );
   }
 
@@ -97,7 +140,7 @@ function buildGrid(snapshot: Snapshot | null): JSX.Element {
   );
 }
 
-function renderLegend(snapshot: Snapshot | null): JSX.Element {
+function renderLegend(snapshot: Snapshot | null, themes: ThemeMap): JSX.Element {
   if (!snapshot) {
     return (
       <div className="legend">
@@ -111,7 +154,7 @@ function renderLegend(snapshot: Snapshot | null): JSX.Element {
     .map((agent) => {
       if (seen.has(agent.name)) return null;
       seen.add(agent.name);
-      const theme = AGENT_THEME[agent.name];
+      const theme = themes[agent.name];
       return (
         <div
           key={agent.name}
@@ -121,7 +164,7 @@ function renderLegend(snapshot: Snapshot | null): JSX.Element {
               ? ({
                   "--tile-accent": theme.color,
                   "--tile-glow": theme.glow,
-                } as React.CSSProperties)
+                } as CSSProperties)
               : {}
           }
         >
@@ -144,8 +187,7 @@ function ConversationLog({ messages }: { messages: ConversationEntry[] }) {
       {messages.map((entry, idx) => (
         <li key={`${entry.turn}-${idx}`}>
           <span className="conversation-turn">Turn {entry.turn}</span>{" "}
-          <strong>{entry.from}</strong> → <strong>{entry.to}</strong>:{" "}
-          <span>{entry.message}</span>
+          <strong>{entry.from}</strong> → <strong>{entry.to}</strong>: <span>{entry.message}</span>
         </li>
       ))}
     </ul>
@@ -202,6 +244,7 @@ export default function App(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
 
   const canStep = useMemo(() => Boolean(snapshot), [snapshot]);
+  const themeMap = useMemo(() => buildThemeMap(snapshot), [snapshot]);
 
   useEffect(() => {
     handleReset();
@@ -268,9 +311,15 @@ export default function App(): JSX.Element {
           <input
             id="agents"
             type="number"
+            min={2}
+            max={6}
             value={config.numAgents}
-            disabled
-            title="現在は2人のエージェントのみサポートしています。"
+            onChange={(event) =>
+              setConfig((prev) => ({
+                ...prev,
+                numAgents: Number(event.target.value),
+              }))
+            }
           />
         </div>
         <div className="field">
@@ -319,9 +368,9 @@ export default function App(): JSX.Element {
           <h2>冒険盤</h2>
           <div className="board-diorama">
             <div className="board-overlay" />
-            {buildGrid(snapshot)}
+            {buildGrid(snapshot, themeMap)}
           </div>
-          {renderLegend(snapshot)}
+          {renderLegend(snapshot, themeMap)}
         </section>
         <section className="panel">
           <div className="panel-section">
