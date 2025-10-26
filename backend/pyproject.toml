@@ -10,14 +10,15 @@ dependencies = [
 ]
 
 [project.scripts]
-serve = "sandbox_backend.serve:main"
+serve = "serve:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.package-dir]
-"" = "src"
+[tool.setuptools]
+package-dir = {"" = "src"}
+py-modules = ["main", "sandbox_simulation", "serve"]
 
 [tool.uv]
 package = true

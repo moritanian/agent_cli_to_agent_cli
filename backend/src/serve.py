@@ -37,7 +37,7 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
 def main(argv: Optional[list[str]] = None) -> None:
     args = parse_args(argv)
     uvicorn.run(
-        "sandbox_backend.main:app",
+        "main:app",
         host=args.host,
         port=args.port,
         reload=args.reload,

@@ -10,11 +10,11 @@ from pydantic import BaseModel
 
 # Ensure project root (containing cli_clients, etc.) is importable when the package
 # is executed from an installed location.
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from .sandbox_simulation import SandboxSimulation
+from sandbox_simulation import SandboxSimulation
 
 app = FastAPI(title="Sandbox Agent Simulator")
 
