@@ -24,6 +24,7 @@ export async function resetSimulation(config: ResetConfig): Promise<ResetRespons
     seed: config.seed ? Number(config.seed) : undefined,
     debug: config.debug,
     backend: config.backend,
+    player_agent: config.playerAgent,
   };
   return request<ResetResponse>("/reset", {
     method: "POST",

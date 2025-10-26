@@ -59,7 +59,7 @@ async def reset(request: ResetRequest) -> dict[str, object]:
         player_agent=request.player_agent,
     )
     snapshot = simulation.reset()
-    return {"status": "ok", "snapshot": snapshot}
+    return {"status": "ok", "snapshot": snapshot, "playerAgent": request.player_agent}
 
 
 @app.post("/step")
