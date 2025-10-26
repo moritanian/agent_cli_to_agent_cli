@@ -313,9 +313,6 @@ class CodexCliChatCompletionClient(CLIChatCompletionClient):
         return text
 
 
-_JSON_BLOCK_RE = re.compile(r"\{.*?\}", re.DOTALL)
-
-
 class MockCliChatCompletionClient(ChatCompletionClient):
     """Mock client that randomly selects one of the provided legal actions."""
 
@@ -385,18 +382,19 @@ class MockCliChatCompletionClient(ChatCompletionClient):
         for message in messages:
             if isinstance(message, UserMessage):
                 prompt = _render_user_content(message.content)
-        candidates = _JSON_BLOCK_RE.findall(prompt)
-        payload = {}
-        for raw in reversed(candidates):
+        payload: dict[str, Any] = {}
+        if prompt:
             try:
-                payload = json.loads(raw)
-                break
-            except json.JSONDecodeError:
-                continue
+                start = prompt.index("{")
+                payload = json.loads(prompt[start:])
+            except (ValueError, json.JSONDecodeError):
+                payload = {}
         legal_actions = payload.get("legal_actions") if isinstance(payload, dict) else None
         if not isinstance(legal_actions, list) or not legal_actions:
             return json.dumps({"action": "wait"})
-        action = self._rng.choice(legal_actions)
+        non_wait = [entry for entry in legal_actions if entry.get("action") != "wait"]
+        choice_pool = non_wait or legal_actions
+        action = self._rng.choice(choice_pool)
         kind = action.get("action")
         if kind == "move":
             direction = action.get("direction", "up")

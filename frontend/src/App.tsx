@@ -92,11 +92,17 @@ function buildThemeMap(snapshot: Snapshot | null): ThemeMap {
 function buildSpeechMap(snapshot: Snapshot | null): Record<string, string> {
   if (!snapshot) return {};
   const talkMap: Record<string, string> = {};
-  snapshot.messages.forEach((entry) => {
-    if (entry.from) {
-      talkMap[entry.from] = entry.message;
-    }
-  });
+  const currentTurn = snapshot.turn;
+  [...snapshot.messages]
+    .reverse()
+    .forEach((entry) => {
+      if (entry.turn !== currentTurn) {
+        return;
+      }
+      if (entry.from && !(entry.from in talkMap)) {
+        talkMap[entry.from] = entry.message;
+      }
+    });
   return talkMap;
 }
 
@@ -227,7 +233,7 @@ function ConversationLog({
   );
 }
 
-function DebugPanel({ history }: { history: TurnResult[] }) {
+function DebugPanel({ history, themes }: { history: TurnResult[]; themes: ThemeMap }) {
   if (!history.length) {
     return <p className="placeholder">Advance a turn to view prompts and responses.</p>;
   }
@@ -238,7 +244,7 @@ function DebugPanel({ history }: { history: TurnResult[] }) {
           <summary>Turn {entry.turn}</summary>
           {entry.debug.map((debug: DebugEntry, idx: number) => (
             <div className="debug-entry" key={`${entry.turn}-${debug.agent}-${idx}`}>
-              <h4>{debug.agent}</h4>
+              <h4>{themes[debug.agent]?.title ?? debug.agent}</h4>
               <div className="debug-field">
                 <span className="label">Legal actions:</span>
                 <code>{JSON.stringify(debug.legal_actions)}</code>
@@ -582,7 +588,7 @@ export default function App(): JSX.Element {
           </div>
           <div className="panel-section">
             <h2>Debug Panel</h2>
-            <DebugPanel history={history} />
+            <DebugPanel history={history} themes={themeMap} />
           </div>
         </section>
       </main>
