@@ -1,14 +1,32 @@
-# AutoGen × Gemini CLI Sample
+# Sandbox Agent Playground
 
-A minimal AutoGen AgentChat (v0.10) proof-of-concept that shells out to the
-Gemini CLI in non-interactive mode (`gemini -p`) via a custom
-`ChatCompletionClient`. The project assumes [`uv`](https://github.com/astral-sh/uv)
-for dependency management so everything can be executed in a sandboxed virtual
-environment. Two entry points are provided under `backend/src` (run them from
-`backend/` with `uv run python -m <module>`):
+The primary deliverable in this repository is an interactive sandbox web UI for
+observing and debugging multi-agent conversations that run on top of AutoGen
+AgentChat (v0.10). The React frontend renders a glowing battle grid, per-turn
+conversation log, and detailed debug feed while the FastAPI backend coordinates
+LLM-powered agents (Gemini, Codex, or a deterministic mock). Helpers and CLI
+demos remain available, but the browser-based playground is considered the core
+experience.
 
-- `single_agent_demo.py` — original single-assistant demo that answers a prompt.
-- `two_agent_demo.py` — new round-robin sample where two Gemini-backed agents collaborate.
+## Architecture Snapshot
+
+- **Frontend (`frontend/src`)** – Vite + React dashboard that drives the sandbox UI. It advances the simulation turn-by-turn via HTTP calls, shows board state, and surfaces prompts/responses with live styling.
+- **Backend (`backend/src`)** – FastAPI service (`main.py`) wrapping `SandboxSimulation`, which manages agent state, legal actions, player turns, and backend selection. LLM clients and CLI demos live alongside the service.
+- **CLI tooling** – Modules such as `two_agent_demo.py`, `single_agent_demo.py`, and `sandbox_game.py` reuse the same simulation logic for terminal-based experiments.
+
+For contributor workflow expectations (coding style, test commands, and release etiquette) see `AGENTS.md`.
+
+## Sandbox Web UI Specification
+
+- **Core loop** – Frontend triggers `/reset`, then `/step` for each turn. Backend returns snapshots with agent positions, conversation log, debug prompts, and whether a player-controlled action is required.
+- **Board view** – Renders the sandbox grid with responsive sizing (supports ≥4×4) and themed agent tiles. Each occupied cell displays icon, title, and the agent’s latest spoken line for the current turn.
+- **Control panel** – Allows configuration of grid size (2–8), agent count (2–6), debug flag, backend choice (`gemini`, `codex`, `mock`), random seed, and toggling a player-controlled agent. Reset reapplies settings; Step advances the simulation.
+- **Conversation log** – Lists interactions chronologically (Turn N, speaker → target, message). Automatically scrolls when long.
+- **Debug panel** – Accordion of per-turn prompt/response payloads, legal action lists, parsed actions, and optional notes. Scrollable to prevent layout overflow.
+- **Player actions** – When the simulation asks for player input, the UI shows selectable moves and talk options (with editable message drafts) for the designated agent.
+- **Backends** – Gemini and Codex modes shell out to their respective CLIs; Mock mode returns deterministic random actions for quick smoke tests. Backend choice propagates to both logs and board badges.
+  
+Implementation details may evolve; this section captures the intended behaviour at a high level.
 
 ## Prerequisites
 
@@ -38,7 +56,7 @@ The multi-agent version runs two `AssistantAgent`s in sequence (planner →
 executor), passing the first agent's reply as context for the second so you can
 observe a lightweight two-party exchange.
 
-## Sandbox Web UI
+## Running the Sandbox UI
 
 This repository also includes an interactive sandbox viewer for debugging
 multi-agent runs:
