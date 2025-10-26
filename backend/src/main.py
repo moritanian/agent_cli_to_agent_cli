@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -35,6 +35,11 @@ class ResetRequest(BaseModel):
     seed: Optional[int] = None
     debug: bool = False
     backend: str = "gemini"
+    player_agent: bool = False
+
+
+class PlayerActionRequest(BaseModel):
+    action: Dict[str, object]
 
 
 @app.get("/health")
@@ -51,6 +56,7 @@ async def reset(request: ResetRequest) -> dict[str, object]:
         debug=request.debug,
         seed=request.seed,
         backend=request.backend,
+        player_agent=request.player_agent,
     )
     snapshot = simulation.reset()
     return {"status": "ok", "snapshot": snapshot}
@@ -61,6 +67,17 @@ async def step() -> dict[str, object]:
     if simulation is None:
         raise HTTPException(status_code=400, detail="Simulation not initialised. Call /reset first.")
     result = await simulation.step()
+    return result
+
+
+@app.post("/player_action")
+async def player_action(request: PlayerActionRequest) -> dict[str, object]:
+    if simulation is None:
+        raise HTTPException(status_code=400, detail="Simulation not initialised. Call /reset first.")
+    try:
+        result = await simulation.apply_player_action(request.action)
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     return result
 
 

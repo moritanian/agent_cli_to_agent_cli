@@ -56,6 +56,8 @@ multi-agent runs:
 - From the CLI, run `python sandbox_game.py --backend codex|gemini|mock` to
   switch LLM providers; the web UI exposes the same toggle in the control
   panel (the mock backend picks random actions for quick smoke tests).
+- Enable "Add player-controlled agent" in the web UI (or pass `--player` to the
+  CLI) to manually choose actions from the legal move list each turn.
 - Both `GeminiCliChatCompletionClient` and `CodexCliChatCompletionClient` accept
   extra CLI flags if you need to tune temperature, model IDs, or safety settings.
 - Swap the hard-coded prompts in `main.py` or wire the shared `SandboxSimulation`

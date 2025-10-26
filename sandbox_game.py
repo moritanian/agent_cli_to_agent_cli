@@ -24,6 +24,7 @@ async def run_simulation(
     debug: bool = False,
     seed: int | None = None,
     backend: str = "gemini",
+    player_agent: bool = False,
 ) -> None:
     sim = SandboxSimulation(
         num_agents=num_agents,
@@ -31,6 +32,7 @@ async def run_simulation(
         debug=debug,
         seed=seed,
         backend=backend,
+        player_agent=player_agent,
     )
     snapshot = sim.reset()
     print("=== Initial State ===")
@@ -71,8 +73,13 @@ def main() -> None:
     parser.add_argument(
         "--backend",
         default="gemini",
-        choices=["gemini", "codex"],
+        choices=["gemini", "codex", "mock"],
         help="CLI backend to use for LLM calls.",
+    )
+    parser.add_argument(
+        "--player",
+        action="store_true",
+        help="Include a player-controlled adventurer (last agent).",
     )
     parser.add_argument(
         "--debug",
@@ -89,6 +96,7 @@ def main() -> None:
             debug=args.debug,
             seed=args.seed,
             backend=args.backend,
+            player_agent=args.player,
         )
     )
 

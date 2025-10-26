@@ -34,3 +34,10 @@ export async function resetSimulation(config: ResetConfig): Promise<ResetRespons
 export async function stepSimulation(): Promise<TurnResult> {
   return request<TurnResult>("/step", { method: "POST" });
 }
+
+export async function sendPlayerAction(action: Record<string, unknown>): Promise<TurnResult> {
+  return request<TurnResult>("/player_action", {
+    method: "POST",
+    body: JSON.stringify({ action }),
+  });
+}

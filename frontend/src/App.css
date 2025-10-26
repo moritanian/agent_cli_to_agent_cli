@@ -363,6 +363,78 @@ header p {
   font-size: clamp(1rem, 3vw, 1.2rem);
 }
 
+.player-panel {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(10, 15, 25, 0.78);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.35);
+}
+
+.player-panel h3 {
+  margin: 0 0 0.4rem 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+.player-panel p {
+  margin: 0 0 0.6rem 0;
+  font-size: 0.85rem;
+  color: rgba(224, 231, 255, 0.78);
+}
+
+.player-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.player-action-button {
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(135deg, rgba(99, 141, 255, 0.85), rgba(154, 190, 255, 0.85));
+  color: #071025;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.player-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.player-action-button:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 18px rgba(120, 180, 255, 0.35);
+}
+
+.player-talk-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 220px;
+}
+
+.player-talk-option label {
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+}
+
+.player-message-input {
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(14, 19, 28, 0.85);
+  color: inherit;
+}
+
 .panel {
   display: flex;
   flex-direction: column;

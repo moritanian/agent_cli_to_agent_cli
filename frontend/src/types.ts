@@ -30,6 +30,7 @@ export interface Snapshot {
   traits: Record<string, AgentTrait>;
   messages: ConversationEntry[];
   backend?: string;
+  playerAgent?: boolean;
 }
 
 export interface LegalAction {
@@ -37,6 +38,12 @@ export interface LegalAction {
   direction?: "up" | "down" | "left" | "right";
   target?: string;
   target_title?: string;
+}
+
+export interface PlayerRequest {
+  agent: string;
+  legal_actions: LegalAction[];
+  traits?: AgentTrait;
 }
 
 export interface DebugEntry {
@@ -53,6 +60,8 @@ export interface TurnResult {
   snapshot: Snapshot;
   turnMessages: ConversationEntry[];
   debug: DebugEntry[];
+  requiresPlayer?: boolean;
+  player?: PlayerRequest;
 }
 
 export interface ResetResponse {
@@ -66,4 +75,5 @@ export interface ResetConfig {
   seed?: string;
   debug: boolean;
   backend: string;
+  playerAgent: boolean;
 }

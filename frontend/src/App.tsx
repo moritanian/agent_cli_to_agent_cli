@@ -1,17 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import "./App.css";
-import { resetSimulation, stepSimulation } from "./api";
+import { resetSimulation, sendPlayerAction, stepSimulation } from "./api";
 import type {
   AgentTrait,
   ConversationEntry,
   DebugEntry,
+  PlayerRequest,
   ResetConfig,
   Snapshot,
   TurnResult,
 } from "./types";
 
 type ThemeMap = Record<string, AgentTrait>;
+type PlayerActionPayload =
+  | { action: "move"; direction: string }
+  | { action: "talk"; target: string; message: string }
+  | { action: "wait" };
 
 const DEFAULT_CONFIG: ResetConfig = {
   gridSize: 3,
@@ -19,6 +24,7 @@ const DEFAULT_CONFIG: ResetConfig = {
   seed: "",
   debug: false,
   backend: "gemini",
+  playerAgent: false,
 };
 
 const FALLBACK_THEMES: AgentTrait[] = [
@@ -269,10 +275,30 @@ export default function App(): JSX.Element {
   const [history, setHistory] = useState<TurnResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [playerRequest, setPlayerRequest] = useState<PlayerRequest | null>(null);
+  const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({});
 
-  const canStep = useMemo(() => Boolean(snapshot), [snapshot]);
+  const canStep = useMemo(() => Boolean(snapshot) && playerRequest === null, [snapshot, playerRequest]);
   const themeMap = useMemo(() => buildThemeMap(snapshot), [snapshot]);
   const speechMap = useMemo(() => buildSpeechMap(snapshot), [snapshot]);
+
+  useEffect(() => {
+    if (!playerRequest) {
+      setMessageDrafts({});
+      return;
+    }
+    setMessageDrafts((prev) => {
+      const next: Record<string, string> = {};
+      playerRequest.legal_actions.forEach((action) => {
+        if (action.action === "talk" && action.target) {
+          const title = themeMap[action.target]?.title ?? action.target;
+          const fallback = `Hey ${title}, let's keep moving!`;
+          next[action.target] = prev[action.target] ?? fallback;
+        }
+      });
+      return next;
+    });
+  }, [playerRequest, themeMap]);
 
   useEffect(() => {
     handleReset();
@@ -283,6 +309,8 @@ export default function App(): JSX.Element {
     try {
       setLoading(true);
       setError(null);
+      setPlayerRequest(null);
+      setMessageDrafts({});
       const response = await resetSimulation(config);
       setSnapshot(response.snapshot);
       setHistory([]);
@@ -301,6 +329,33 @@ export default function App(): JSX.Element {
       setError(null);
       const result = await stepSimulation();
       setSnapshot(result.snapshot);
+      if (result.requiresPlayer) {
+        setPlayerRequest(result.player ?? null);
+        return;
+      }
+      setPlayerRequest(null);
+      setMessageDrafts({});
+      setHistory((prev) => [...prev, result]);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handlePlayerAction(action: PlayerActionPayload) {
+    try {
+      setLoading(true);
+      setError(null);
+      const result = await sendPlayerAction(action);
+      setSnapshot(result.snapshot);
+      if (result.requiresPlayer) {
+        setPlayerRequest(result.player ?? null);
+        return;
+      }
+      setPlayerRequest(null);
+      setMessageDrafts({});
       setHistory((prev) => [...prev, result]);
     } catch (err) {
       console.error(err);
@@ -335,7 +390,7 @@ export default function App(): JSX.Element {
           />
         </div>
         <div className="field">
-          <label htmlFor="agents">Number of Agents</label>
+          <label htmlFor="agents">Number of Agents{config.playerAgent ? " (including you)" : ""}</label>
           <input
             id="agents"
             type="number"
@@ -394,7 +449,24 @@ export default function App(): JSX.Element {
           >
             <option value="gemini">Gemini CLI</option>
             <option value="codex">Codex CLI</option>
+            <option value="mock">Mock (offline)</option>
           </select>
+        </div>
+        <div className="field checkbox">
+          <label htmlFor="playerAgent">
+            <input
+              id="playerAgent"
+              type="checkbox"
+              checked={config.playerAgent}
+              onChange={(event) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  playerAgent: event.target.checked,
+                }))
+              }
+            />
+            Add player-controlled agent
+          </label>
         </div>
         <div className="actions">
           <button onClick={handleReset} disabled={loading}>
@@ -420,6 +492,88 @@ export default function App(): JSX.Element {
             {buildGrid(snapshot, themeMap, speechMap)}
           </div>
           {renderLegend(snapshot, themeMap)}
+          {playerRequest && (
+            <div className="player-panel">
+              <h3>Player Turn</h3>
+              <p>
+                Choose an action for {themeMap[playerRequest.agent]?.title ?? playerRequest.agent}.
+              </p>
+              <div className="player-actions">
+                {(() => {
+                  let waitRendered = false;
+                  return playerRequest.legal_actions.map((action, idx) => {
+                  if (action.action === "move" && action.direction) {
+                    const dir = action.direction.charAt(0).toUpperCase() + action.direction.slice(1);
+                    const label = `Move ${dir}`;
+                    return (
+                      <button
+                        key={`move-${action.direction}`}
+                        className="player-action-button"
+                        onClick={() => handlePlayerAction({ action: "move", direction: action.direction! })}
+                        disabled={loading}
+                      >
+                        {label}
+                      </button>
+                    );
+                  }
+                  if (action.action === "talk" && action.target) {
+                    const title = themeMap[action.target]?.title ?? action.target;
+                    const value = messageDrafts[action.target] ?? "";
+                    return (
+                      <div key={`talk-${action.target}`} className="player-talk-option">
+                        <label>
+                          Message to {title}
+                          <input
+                            className="player-message-input"
+                            value={value}
+                            onChange={(event) =>
+                              setMessageDrafts((prev) => ({
+                                ...prev,
+                                [action.target!]: event.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <button
+                          className="player-action-button"
+                          onClick={() =>
+                            handlePlayerAction({
+                              action: "talk",
+                              target: action.target!,
+                              message:
+                                (messageDrafts[action.target!] ?? "").trim() ||
+                                `Hey ${title}, let's keep moving!`,
+                            })
+                          }
+                          disabled={loading}
+                        >
+                          Talk to {title}
+                        </button>
+                      </div>
+                    );
+                  }
+                  if (action.action === "wait") {
+                    if (waitRendered) {
+                      return null;
+                    }
+                    waitRendered = true;
+                    return (
+                      <button
+                        key="wait"
+                        className="player-action-button"
+                        onClick={() => handlePlayerAction({ action: "wait" })}
+                        disabled={loading}
+                      >
+                        Wait this turn
+                      </button>
+                    );
+                  }
+                  return null;
+                });
+                })()}
+              </div>
+            </div>
+          )}
         </section>
         <section className="panel">
           <div className="panel-section">

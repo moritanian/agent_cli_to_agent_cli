@@ -1,4 +1,9 @@
+import sys
+from pathlib import Path
+
 import pytest
+
+sys.path.append(str(Path(__file__).resolve().parents[1] / "backend" / "src"))
 
 from sandbox_simulation import SandboxSimulation
 
@@ -47,3 +52,24 @@ async def test_mock_backend_records_history():
     assert len(history) == 5
     assert history[-1]["snapshot"]["backend"] == "mock"
 
+
+@pytest.mark.asyncio
+async def test_player_agent_requires_input_and_applies_action():
+    sim = SandboxSimulation(num_agents=2, grid_size=3, backend="mock", player_agent=True, seed=3)
+    snapshot = sim.reset()
+    assert snapshot["playerAgent"] is True
+
+    pending = await sim.step()
+    assert pending["requiresPlayer"] is True
+    player = pending["player"]
+    assert player["agent"].endswith(str(sim.num_agents))
+
+    # choose a wait action (always available)
+    wait_action = next(
+        (entry for entry in player["legal_actions"] if entry["action"] == "wait"),
+        {"action": "wait"},
+    )
+    result = await sim.apply_player_action(wait_action)
+    assert not result.get("requiresPlayer", False)
+    assert sim.pending_player is None
+    assert sim.history()[-1]["turn"] == sim.turn
