@@ -18,7 +18,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from cli_clients import GeminiCliChatCompletionClient
+from cli_clients import CodexCliChatCompletionClient, GeminiCliChatCompletionClient
 
 ActionDict = Dict[str, str]
 
@@ -131,6 +131,7 @@ class SandboxSimulation:
         grid_size: int = 3,
         debug: bool = False,
         seed: Optional[int] = None,
+        backend: str = "gemini",
     ) -> None:
         if num_agents < 2:
             raise ValueError("This prototype currently supports at least 2 agents.")
@@ -139,6 +140,7 @@ class SandboxSimulation:
         self.debug = debug
         self.seed = seed
         self._rng = random.Random(seed)
+        self.backend = backend.lower()
 
         self.turn = 0
         self.agents: List[AgentState] = []
@@ -232,9 +234,16 @@ class SandboxSimulation:
             controllers[name] = AssistantAgent(
                 name=name,
                 system_message=_build_system_prompt(persona, roster_desc),
-                model_client=GeminiCliChatCompletionClient(debug=self.debug),
+                model_client=self._build_model_client(),
             )
         return controllers
+
+    def _build_model_client(self):
+        if self.backend == "codex":
+            return CodexCliChatCompletionClient(debug=self.debug)
+        if self.backend == "gemini":
+            return GeminiCliChatCompletionClient(debug=self.debug)
+        raise ValueError(f"Unsupported backend '{self.backend}'. Expected 'gemini' or 'codex'.")
 
     def snapshot(self) -> Dict[str, object]:
         return {
@@ -246,6 +255,7 @@ class SandboxSimulation:
             ],
             "traits": self.agent_profiles,
             "messages": list(self.conversation_log),
+            "backend": self.backend,
         }
 
     async def step(self) -> Dict[str, object]:

@@ -47,14 +47,17 @@ multi-agent runs:
    ```
 3. Open the printed local URL (default `http://localhost:5173`) to step the
    simulation turn-by-turn, inspect agent prompts/responses, and review the
-   shared conversation log.
+   shared conversation log. Use the controls at the top to adjust grid size,
+   agent count, or switch between the Gemini and Codex CLI backends before
+   hitting Reset.
 
 ## Customisation tips
 
-- Set `GeminiCliChatCompletionClient(model=...)` if you want a specific Gemini model; leaving it `None` lets the CLI pick its default (usually Gemini 2.5 Pro).
-- Append CLI switches via `extra_flags` (temperature, safety settings, etc.).
-- Swap the hard-coded prompts in either script for your own workflow or plug
-  the client into a richer `Team` configuration.
-- `cli_clients.py` also provides `CLIChatCompletionClient` for building your own
-  adapters and a `CodexCliChatCompletionClient` example; swap the factory in the
-  scripts if you want to target a different CLI by default.
+- From the CLI, run `python sandbox_game.py --backend codex` (or `--backend gemini`)
+  to switch LLM providers; the web UI exposes the same toggle in the control
+  panel.
+- Both `GeminiCliChatCompletionClient` and `CodexCliChatCompletionClient` accept
+  extra CLI flags if you need to tune temperature, model IDs, or safety settings.
+- Swap the hard-coded prompts in `main.py` or wire the shared `SandboxSimulation`
+  into your own AutoGen team configuration to experiment with different agent
+  personas.

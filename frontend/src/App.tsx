@@ -18,6 +18,7 @@ const DEFAULT_CONFIG: ResetConfig = {
   numAgents: 2,
   seed: "",
   debug: false,
+  backend: "gemini",
 };
 
 const FALLBACK_THEMES: AgentTrait[] = [
@@ -379,6 +380,22 @@ export default function App(): JSX.Element {
             Enable CLI debug logs
           </label>
         </div>
+        <div className="field">
+          <label htmlFor="backend">LLM Backend</label>
+          <select
+            id="backend"
+            value={config.backend}
+            onChange={(event) =>
+              setConfig((prev) => ({
+                ...prev,
+                backend: event.target.value,
+              }))
+            }
+          >
+            <option value="gemini">Gemini CLI</option>
+            <option value="codex">Codex CLI</option>
+          </select>
+        </div>
         <div className="actions">
           <button onClick={handleReset} disabled={loading}>
             Reset
@@ -392,7 +409,12 @@ export default function App(): JSX.Element {
 
       <main className="layout">
         <section className="board">
-          <h2>Adventure Board</h2>
+        <h2>
+          Adventure Board
+          {snapshot?.backend && (
+            <span className="board-backend">{snapshot.backend.toUpperCase()} mode</span>
+          )}
+        </h2>
           <div className="board-diorama">
             <div className="board-overlay" />
             {buildGrid(snapshot, themeMap, speechMap)}

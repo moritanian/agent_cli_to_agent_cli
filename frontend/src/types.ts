@@ -29,6 +29,7 @@ export interface Snapshot {
   agents: AgentSnapshot[];
   traits: Record<string, AgentTrait>;
   messages: ConversationEntry[];
+  backend?: string;
 }
 
 export interface LegalAction {
@@ -64,4 +65,5 @@ export interface ResetConfig {
   numAgents: number;
   seed?: string;
   debug: boolean;
+  backend: string;
 }

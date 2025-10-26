@@ -23,12 +23,14 @@ async def run_simulation(
     turns: int = 3,
     debug: bool = False,
     seed: int | None = None,
+    backend: str = "gemini",
 ) -> None:
     sim = SandboxSimulation(
         num_agents=num_agents,
         grid_size=grid_size,
         debug=debug,
         seed=seed,
+        backend=backend,
     )
     snapshot = sim.reset()
     print("=== Initial State ===")
@@ -67,6 +69,12 @@ def main() -> None:
     parser.add_argument("--turns", type=int, default=3, help="Number of turns to simulate.")
     parser.add_argument("--seed", type=int, default=None, help="Random seed for initial placement.")
     parser.add_argument(
+        "--backend",
+        default="gemini",
+        choices=["gemini", "codex"],
+        help="CLI backend to use for LLM calls.",
+    )
+    parser.add_argument(
         "--debug",
         action="store_true",
         help="Enable CLI debug logging for agent model clients.",
@@ -80,6 +88,7 @@ def main() -> None:
             turns=args.turns,
             debug=args.debug,
             seed=args.seed,
+            backend=args.backend,
         )
     )
 

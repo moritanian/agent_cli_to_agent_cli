@@ -34,6 +34,7 @@ class ResetRequest(BaseModel):
     num_agents: int = 2
     seed: Optional[int] = None
     debug: bool = False
+    backend: str = "gemini"
 
 
 @app.get("/health")
@@ -49,6 +50,7 @@ async def reset(request: ResetRequest) -> dict[str, object]:
         grid_size=request.grid_size,
         debug=request.debug,
         seed=request.seed,
+        backend=request.backend,
     )
     snapshot = simulation.reset()
     return {"status": "ok", "snapshot": snapshot}
