@@ -12,6 +12,24 @@ import type {
   TurnResult,
 } from "./types";
 
+const AGENT_THEME: Record<
+  string,
+  { title: string; icon: string; color: string; glow: string }
+> = {
+  agent1: {
+    title: "Alex",
+    icon: "🛡️",
+    color: "var(--agent-one)",
+    glow: "var(--agent-one-glow)",
+  },
+  agent2: {
+    title: "Blair",
+    icon: "🗡️",
+    color: "var(--agent-two)",
+    glow: "var(--agent-two-glow)",
+  },
+};
+
 const DEFAULT_CONFIG: ResetConfig = {
   gridSize: 3,
   numAgents: 2,
@@ -21,7 +39,11 @@ const DEFAULT_CONFIG: ResetConfig = {
 
 function buildGrid(snapshot: Snapshot | null): JSX.Element {
   if (!snapshot) {
-    return <div className="grid-placeholder">Reset を押してシミュレーションを開始してください。</div>;
+    return (
+      <div className="grid-placeholder">
+        Reset を押してシミュレーションを開始してください。
+      </div>
+    );
   }
 
   const { gridSize, agents } = snapshot;
@@ -32,12 +54,32 @@ function buildGrid(snapshot: Snapshot | null): JSX.Element {
       const occupant = agents.find(
         (agent) => agent.position.x === x && agent.position.y === y
       );
+      const theme = occupant ? AGENT_THEME[occupant.name] : undefined;
       cells.push(
-        <div className="grid-cell" key={`${x}-${y}`}>
-          <span className="cell-coord">
-            {x},{y}
-          </span>
-          {occupant && <span className="cell-agent">{occupant.name}</span>}
+        <div
+          className={`grid-cell ${theme ? "grid-cell--occupied" : ""}`}
+          key={`${x}-${y}`}
+          style={
+            theme
+              ? ({
+                  "--tile-accent": theme.color,
+                  "--tile-glow": theme.glow,
+                } as React.CSSProperties)
+              : {}
+          }
+        >
+          <span className="cell-coord">{`${x},${y}`}</span>
+          <div className="tile-bg" />
+          {occupant ? (
+            <div className="cell-agent">
+              <span className="agent-icon">{theme?.icon ?? "⭐"}</span>
+              <span className="agent-label">
+                {theme?.title ?? occupant.name}
+              </span>
+            </div>
+          ) : (
+            <span className="cell-mote">✦</span>
+          )}
         </div>
       );
     }
@@ -49,13 +91,48 @@ function buildGrid(snapshot: Snapshot | null): JSX.Element {
   }
 
   return (
-    <div
-      className="grid"
-      style={{ gridTemplateRows: `repeat(${gridSize}, 1fr)` }}
-    >
+    <div className="grid" style={{ gridTemplateRows: `repeat(${gridSize}, 1fr)` }}>
       {rows}
     </div>
   );
+}
+
+function renderLegend(snapshot: Snapshot | null): JSX.Element {
+  if (!snapshot) {
+    return (
+      <div className="legend">
+        <span className="legend-empty">空きマス</span>
+      </div>
+    );
+  }
+
+  const seen = new Set<string>();
+  const badges = snapshot.agents
+    .map((agent) => {
+      if (seen.has(agent.name)) return null;
+      seen.add(agent.name);
+      const theme = AGENT_THEME[agent.name];
+      return (
+        <div
+          key={agent.name}
+          className="legend-item"
+          style={
+            theme
+              ? ({
+                  "--tile-accent": theme.color,
+                  "--tile-glow": theme.glow,
+                } as React.CSSProperties)
+              : {}
+          }
+        >
+          <span className="legend-icon">{theme?.icon ?? "★"}</span>
+          <span>{theme?.title ?? agent.name}</span>
+        </div>
+      );
+    })
+    .filter(Boolean);
+
+  return <div className="legend">{badges}</div>;
 }
 
 function ConversationLog({ messages }: { messages: ConversationEntry[] }) {
@@ -166,7 +243,7 @@ export default function App(): JSX.Element {
     <div className="app">
       <header>
         <h1>Sandbox Agent Playground</h1>
-        <p>LLMエージェントの挙動をリアルタイムで確認できるデバッグUIです。</p>
+        <p>LLMエージェントの挙動をファンタジーな冒険盤で見届けましょう。</p>
       </header>
 
       <section className="controls">
@@ -239,8 +316,12 @@ export default function App(): JSX.Element {
 
       <main className="layout">
         <section className="board">
-          <h2>サンドボックス</h2>
-          {buildGrid(snapshot)}
+          <h2>冒険盤</h2>
+          <div className="board-diorama">
+            <div className="board-overlay" />
+            {buildGrid(snapshot)}
+          </div>
+          {renderLegend(snapshot)}
         </section>
         <section className="panel">
           <div className="panel-section">
