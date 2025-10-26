@@ -2,15 +2,18 @@
 
 A minimal AutoGen AgentChat (v0.10) proof-of-concept that shells out to the
 Gemini CLI in non-interactive mode (`gemini -p`) via a custom
-`ChatCompletionClient`. Two entry points are provided under `backend/src` (run
-them from `backend/` with `uv run python -m <module>`):
+`ChatCompletionClient`. The project assumes [`uv`](https://github.com/astral-sh/uv)
+for dependency management so everything can be executed in a sandboxed virtual
+environment. Two entry points are provided under `backend/src` (run them from
+`backend/` with `uv run python -m <module>`):
 
 - `single_agent_demo.py` — original single-assistant demo that answers a prompt.
 - `two_agent_demo.py` — new round-robin sample where two Gemini-backed agents collaborate.
 
 ## Prerequisites
 
-- Python 3.10+ with `pyautogen>=0.10.0` installed (`python3 -m pip install --user pyautogen`).
+- [`uv` 0.4+](https://docs.astral.sh/uv/) (installs and manages isolated Python environments).
+- Python 3.10+ (automatically provisioned by `uv` if missing locally).
 - Gemini CLI available on `PATH` (check with `gemini --help`).
 - Gemini API credentials exported so the CLI can authenticate, e.g. `export GEMINI_API_KEY=...`.
 - Outbound network access permitted for the CLI invocation.
@@ -19,6 +22,9 @@ them from `backend/` with `uv run python -m <module>`):
 
 ```bash
 cd backend
+
+# Install/update the virtual environment defined in pyproject.toml
+uv sync
 
 # Single-assistant ping
 uv run python -m single_agent_demo
@@ -40,6 +46,7 @@ multi-agent runs:
 1. Start the FastAPI backend:
    ```bash
    cd backend
+   uv sync
    uv run serve --reload
    ```
 2. Install and launch the Vite + React frontend:

@@ -1,3 +1,2 @@
 - Give spoken message from another agent to LLM
 - Modify turn step
-- Update README with new architecture
