@@ -8,10 +8,6 @@
   --bg-mid: #101726;
   --panel-border: rgba(255, 255, 255, 0.12);
   --panel-bg: rgba(20, 29, 44, 0.78);
-  --agent-one: #8ecae6;
-  --agent-one-glow: rgba(142, 202, 230, 0.6);
-  --agent-two: #f9a03f;
-  --agent-two-glow: rgba(249, 160, 63, 0.6);
 }
 
 body {
@@ -49,13 +45,13 @@ a {
   flex-direction: column;
   gap: 1.5rem;
   padding: 1.8rem 2.2rem 3.5rem;
-  max-width: 1200px;
+  max-width: min(1200px, 100%);
   margin: 0 auto;
 }
 
 header h1 {
   margin: 0;
-  font-size: 2.6rem;
+  font-size: clamp(2rem, 3vw, 2.6rem);
   letter-spacing: 0.04em;
   text-shadow: 0 0 12px rgba(127, 176, 255, 0.32);
 }
@@ -135,7 +131,7 @@ header p {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(340px, 420px) 1fr;
+  grid-template-columns: minmax(320px, 400px) 1fr;
   gap: 1.6rem;
 }
 
@@ -166,7 +162,7 @@ header p {
 
 .board-diorama {
   position: relative;
-  padding: 1.3rem;
+  padding: clamp(0.8rem, 2vw, 1.3rem);
   border-radius: 16px;
   background: linear-gradient(145deg, rgba(27, 38, 61, 0.88), rgba(9, 14, 28, 0.9));
   box-shadow: inset 0 0 32px rgba(10, 15, 27, 0.6);
@@ -174,7 +170,7 @@ header p {
 
 .board-overlay {
   position: absolute;
-  inset: 14px;
+  inset: clamp(10px, 2vw, 14px);
   pointer-events: none;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
@@ -185,23 +181,24 @@ header p {
 
 .grid {
   display: grid;
-  gap: 0.8rem;
+  gap: clamp(0.35rem, 1.2vw, 0.8rem);
   position: relative;
   z-index: 1;
 }
 
 .grid-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(72px, 18vw, 100px), 1fr));
+  gap: clamp(0.35rem, 1.2vw, 0.8rem);
 }
 
 .grid-cell {
   position: relative;
-  min-height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
+  aspect-ratio: 1;
+  min-height: clamp(70px, 18vw, 110px);
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   overflow: hidden;
@@ -231,7 +228,7 @@ header p {
     rgba(7, 12, 24, 0.92);
 }
 
-.grid-cell .cell-coord {
+.cell-coord {
   position: absolute;
   top: 10px;
   left: 10px;
@@ -267,12 +264,12 @@ header p {
 }
 
 .agent-icon {
-  font-size: 1.5rem;
+  font-size: clamp(1.2rem, 3.4vw, 1.6rem);
   filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.3));
 }
 
 .agent-label {
-  font-size: 0.88rem;
+  font-size: clamp(0.7rem, 2vw, 0.9rem);
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--tile-accent);
@@ -287,7 +284,7 @@ header p {
 
 .grid-placeholder,
 .placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.55);
   font-style: italic;
 }
 
@@ -307,7 +304,7 @@ header p {
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(12, 18, 30, 0.78);
-  font-size: 0.85rem;
+  font-size: clamp(0.72rem, 2vw, 0.85rem);
   letter-spacing: 0.04em;
 }
 
@@ -317,7 +314,7 @@ header p {
 }
 
 .legend-icon {
-  font-size: 1.2rem;
+  font-size: clamp(1rem, 3vw, 1.2rem);
 }
 
 .panel {
