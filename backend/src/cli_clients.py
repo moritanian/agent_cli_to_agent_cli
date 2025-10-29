@@ -6,6 +6,8 @@ import asyncio
 import json
 import random
 import re
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Callable, Optional, Sequence
 
 from autogen_core import CancellationToken, FunctionCall
@@ -71,6 +73,7 @@ class CLIChatCompletionClient(ChatCompletionClient):
         json_output: bool = False,
         structured_output: bool = False,
         debug: bool = False,
+        debug_log_path: str | Path | None = None,
     ) -> None:
         super().__init__()
         self._make_argv = make_argv
@@ -92,6 +95,15 @@ class CLIChatCompletionClient(ChatCompletionClient):
         self._prompt_tokens_total = 0
         self._completion_tokens_total = 0
         self._debug = debug
+        self._debug_log_path: Path | None = None
+        if self._debug:
+            candidate = Path(debug_log_path) if debug_log_path is not None else Path.cwd() / "logs" / "cli_debug.log"
+            if not candidate.is_absolute():
+                candidate = (Path.cwd() / candidate).resolve()
+            else:
+                candidate = candidate.resolve()
+            candidate.parent.mkdir(parents=True, exist_ok=True)
+            self._debug_log_path = candidate
 
     async def create(
         self,
@@ -167,16 +179,21 @@ class CLIChatCompletionClient(ChatCompletionClient):
     def model_info(self) -> ModelInfo:
         return self._model_info
 
+    @property
+    def debug_log_path(self) -> Path | None:
+        return self._debug_log_path
+
     async def _execute(self, messages: Sequence[LLMMessage]) -> tuple[str, RequestUsage]:
         prompt = _format_messages(messages)
         argv = list(self._make_argv(prompt))
 
+        log_lines: list[str] = []
+        timestamp = datetime.now().isoformat(timespec="seconds")
         if self._debug:
-            print("=== CLI debug ===")
-            print("Command:", " ".join(argv))
-            preview = prompt[:200].replace("\n", "\\n")
-            trailer = "..." if len(prompt) > 200 else ""
-            print("Prompt preview:", preview, trailer)
+            log_lines.append(f"[{timestamp}] CLI invocation")
+            log_lines.append(f"Command: {' '.join(argv)}")
+            log_lines.append("Prompt:")
+            log_lines.append(prompt)
 
         proc = await asyncio.create_subprocess_exec(
             *argv,
@@ -187,13 +204,15 @@ class CLIChatCompletionClient(ChatCompletionClient):
         stdout = stdout_bytes.decode("utf-8", errors="ignore")
         stderr = stderr_bytes.decode("utf-8", errors="ignore")
 
-        if self._debug:
-            print("Return code:", proc.returncode)
-            print("STDOUT:", stdout.strip()[:500])
-            print("STDERR:", stderr.strip()[:500])
-            print("=== End CLI debug ===")
-
         if proc.returncode != 0:
+            if self._debug:
+                log_lines.append(f"Return code: {proc.returncode}")
+                log_lines.append("STDOUT:")
+                log_lines.append(stdout.rstrip())
+                log_lines.append("STDERR:")
+                log_lines.append(stderr.rstrip())
+                log_lines.append("Status: error")
+                self._append_debug_log("\n".join(log_lines) + "\n\n")
             raise RuntimeError(stderr.strip() or stdout.strip() or f"CLI exited with {proc.returncode}")
 
         text = self._parse_response(stdout, stderr)
@@ -201,12 +220,28 @@ class CLIChatCompletionClient(ChatCompletionClient):
             prompt_tokens=self.count_tokens(messages),
             completion_tokens=max(len(text) // 4, 1) if text else 0,
         )
+        if self._debug:
+            log_lines.append(f"Return code: {proc.returncode}")
+            log_lines.append("STDOUT:")
+            log_lines.append(stdout.rstrip())
+            log_lines.append("STDERR:")
+            log_lines.append(stderr.rstrip())
+            log_lines.append("Parsed response:")
+            log_lines.append(text)
+            log_lines.append("Status: success")
+            self._append_debug_log("\n".join(log_lines) + "\n\n")
         return text, usage
 
     def _record_usage(self, usage: RequestUsage) -> None:
         self._last_usage = usage
         self._prompt_tokens_total += usage.prompt_tokens
         self._completion_tokens_total += usage.completion_tokens
+
+    def _append_debug_log(self, payload: str) -> None:
+        if not self._debug_log_path:
+            return
+        with self._debug_log_path.open("a", encoding="utf-8") as log_file:
+            log_file.write(payload)
 
 
 class GeminiCliChatCompletionClient(CLIChatCompletionClient):
@@ -219,6 +254,7 @@ class GeminiCliChatCompletionClient(CLIChatCompletionClient):
         model: str | None = DEFAULT_GEMINI_MODEL,
         extra_flags: Sequence[str] | None = None,
         debug: bool = False,
+        debug_log_path: str | Path | None = None,
     ) -> None:
         extra_flags = list(extra_flags or [])
 
@@ -236,6 +272,7 @@ class GeminiCliChatCompletionClient(CLIChatCompletionClient):
             model_family=model or ModelFamily.UNKNOWN,
             json_output=True,
             debug=debug,
+            debug_log_path=debug_log_path,
         )
 
     @staticmethod
@@ -261,6 +298,7 @@ class CodexCliChatCompletionClient(CLIChatCompletionClient):
         output_flags: Sequence[str] | None = None,
         extra_flags: Sequence[str] | None = None,
         debug: bool = False,
+        debug_log_path: str | Path | None = None,
     ) -> None:
         output_flags = list(output_flags or [])
         extra_flags = list(extra_flags or [])
@@ -284,6 +322,7 @@ class CodexCliChatCompletionClient(CLIChatCompletionClient):
             parse_response=self._parse_response,
             model_family=model or ModelFamily.UNKNOWN,
             debug=debug,
+            debug_log_path=debug_log_path,
         )
 
     @staticmethod

@@ -92,7 +92,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--debug",
         action="store_true",
-        help="Enable CLI debug output.",
+        help="Write CLI debug details to logs/cli_debug.log.",
     )
     parser.add_argument(
         "--topic",

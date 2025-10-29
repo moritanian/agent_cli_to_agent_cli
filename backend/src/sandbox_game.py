@@ -77,7 +77,7 @@ def main() -> None:
     parser.add_argument(
         "--debug",
         action="store_true",
-        help="Enable CLI debug logging for agent model clients.",
+        help="Write CLI debug details to logs/cli_debug.log.",
     )
     args = parser.parse_args()
 
