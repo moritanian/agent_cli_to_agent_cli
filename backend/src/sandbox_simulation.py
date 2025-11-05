@@ -28,6 +28,7 @@ class AgentState:
     y: int
     inbox: Optional[Dict[str, str]] = None
     last_action: Optional[ActionDict] = field(default=None, repr=False)
+    message_history: List[Dict[str, str]] = field(default_factory=list, repr=False)
 
     @property
     def position(self) -> Dict[str, int]:
@@ -335,6 +336,8 @@ class SandboxSimulation:
             }
             if agent.inbox:
                 observation["message"] = agent.inbox
+            if agent.message_history:
+                observation["message_history"] = agent.message_history
             agent.inbox = None
 
             debug_entry: Dict[str, Any] = {
@@ -508,7 +511,9 @@ class SandboxSimulation:
                     "message": message,
                     "turn": self.turn,
                 }
+                message_entry = {"from": agent.name, "message": message, "turn": self.turn}
                 target_agent.inbox = {"from": agent.name, "message": message}
+                target_agent.message_history.append(message_entry)
                 self._active_turn_messages.append(payload)
                 self.conversation_log.append(payload)
                 debug_entry["notes"] = f"Spoke to {target_name}."
