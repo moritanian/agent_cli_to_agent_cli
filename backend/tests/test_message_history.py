@@ -156,6 +156,65 @@ async def test_message_appears_in_next_step_observation():
 
 
 @pytest.mark.asyncio
+async def test_message_history_keeps_multiple_messages_same_turn():
+    """Test that message_history keeps all messages from the same turn."""
+    sim = SandboxSimulation(num_agents=3, grid_size=3, backend="mock", seed=42)
+    sim.reset()
+
+    # Position all agents adjacent to agent3
+    # agent3 is at (1,1), agent1 at (0,1), agent2 at (1,0)
+    sim.agents[0].x = 0  # agent1
+    sim.agents[0].y = 1
+    sim.agents[1].x = 1  # agent2
+    sim.agents[1].y = 0
+    sim.agents[2].x = 1  # agent3
+    sim.agents[2].y = 1
+
+    agent1 = sim.agents[0]
+    agent2 = sim.agents[1]
+    agent3 = sim.agents[2]
+
+    # Both agent1 and agent2 talk to agent3 in turn 1
+    sim.turn = 1
+    sim._active_turn_messages = []
+
+    action1 = {"action": "talk", "target": "agent3", "message": "Message from agent1"}
+    debug_entry1 = {"notes": ""}
+    sim._apply_action(agent1, action1, debug_entry1)
+
+    # agent3 should have agent1's message
+    assert len(agent3.message_history) == 1
+    assert agent3.message_history[0]["from"] == "agent1"
+
+    action2 = {"action": "talk", "target": "agent3", "message": "Message from agent2"}
+    debug_entry2 = {"notes": ""}
+    sim._apply_action(agent2, action2, debug_entry2)
+
+    # agent3 should now have BOTH messages (same turn)
+    assert len(agent3.message_history) == 2
+    assert agent3.message_history[0]["from"] == "agent1"
+    assert agent3.message_history[0]["message"] == "Message from agent1"
+    assert agent3.message_history[1]["from"] == "agent2"
+    assert agent3.message_history[1]["message"] == "Message from agent2"
+
+    # Both should be from turn 1
+    assert agent3.message_history[0]["turn"] == 1
+    assert agent3.message_history[1]["turn"] == 1
+
+    # Now in a NEW turn, agent1 talks to agent3 again
+    sim.turn = 2
+    action3 = {"action": "talk", "target": "agent3", "message": "New turn message"}
+    debug_entry3 = {"notes": ""}
+    sim._apply_action(agent1, action3, debug_entry3)
+
+    # agent3's message_history should be reset to only the new message
+    assert len(agent3.message_history) == 1
+    assert agent3.message_history[0]["from"] == "agent1"
+    assert agent3.message_history[0]["message"] == "New turn message"
+    assert agent3.message_history[0]["turn"] == 2
+
+
+@pytest.mark.asyncio
 async def test_message_history_included_in_observation():
     """Test that message_history is included in observation when non-empty."""
     sim = SandboxSimulation(num_agents=2, grid_size=3, backend="mock", seed=42)
