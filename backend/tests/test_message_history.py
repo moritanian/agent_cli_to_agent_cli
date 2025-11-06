@@ -18,8 +18,8 @@ async def test_message_history_field_exists():
 
 
 @pytest.mark.asyncio
-async def test_message_history_accumulates_on_talk():
-    """Test that message_history accumulates when agent receives messages."""
+async def test_message_history_keeps_only_latest():
+    """Test that message_history keeps only the most recent message (not accumulating)."""
     sim = SandboxSimulation(num_agents=2, grid_size=3, backend="mock", seed=42)
     sim.reset()
 
@@ -33,8 +33,8 @@ async def test_message_history_accumulates_on_talk():
     agent0 = sim.agents[0]
     agent1 = sim.agents[1]
 
-    # Simulate agent0 talking to agent1
-    action = {"action": "talk", "target": "agent2", "message": "Hello agent2!"}
+    # Simulate agent0 talking to agent1 (first message)
+    action = {"action": "talk", "target": "agent2", "message": "First message"}
     debug_entry = {"notes": ""}
 
     # Simulate turn 1
@@ -42,29 +42,26 @@ async def test_message_history_accumulates_on_talk():
     sim._active_turn_messages = []
     sim._apply_action(agent0, action, debug_entry)
 
-    # Verify agent1 received the message in message_history
+    # Verify agent1 received the first message
     assert len(agent1.message_history) == 1
     assert agent1.message_history[0]["from"] == "agent1"
-    assert agent1.message_history[0]["message"] == "Hello agent2!"
+    assert agent1.message_history[0]["message"] == "First message"
     assert agent1.message_history[0]["turn"] == 1
 
     # Agent0 should not have any messages
     assert len(agent0.message_history) == 0
 
-    # Simulate agent1 talking back to agent0
-    action2 = {"action": "talk", "target": "agent1", "message": "Hi agent1!"}
+    # Simulate agent0 talking to agent1 again (second message)
+    action2 = {"action": "talk", "target": "agent2", "message": "Second message"}
     debug_entry2 = {"notes": ""}
-    sim.turn = 2
-    sim._apply_action(agent1, action2, debug_entry2)
+    sim.turn = 3
+    sim._apply_action(agent0, action2, debug_entry2)
 
-    # Verify agent0 now has one message
-    assert len(agent0.message_history) == 1
-    assert agent0.message_history[0]["from"] == "agent2"
-    assert agent0.message_history[0]["message"] == "Hi agent1!"
-    assert agent0.message_history[0]["turn"] == 2
-
-    # Agent1 should still have only one message (not their own)
+    # Verify agent1 now has ONLY the latest message (old one is replaced)
     assert len(agent1.message_history) == 1
+    assert agent1.message_history[0]["from"] == "agent1"
+    assert agent1.message_history[0]["message"] == "Second message"
+    assert agent1.message_history[0]["turn"] == 3
 
 
 @pytest.mark.asyncio

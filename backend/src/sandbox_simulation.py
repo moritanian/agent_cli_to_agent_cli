@@ -513,7 +513,7 @@ class SandboxSimulation:
                 }
                 message_entry = {"from": agent.name, "message": message, "turn": self.turn}
                 target_agent.inbox = {"from": agent.name, "message": message}
-                target_agent.message_history.append(message_entry)
+                target_agent.message_history = [message_entry]  # Keep only the most recent message
                 self._active_turn_messages.append(payload)
                 self.conversation_log.append(payload)
                 debug_entry["notes"] = f"Spoke to {target_name}."
